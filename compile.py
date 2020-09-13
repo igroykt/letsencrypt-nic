@@ -41,9 +41,4 @@ try:
 except Exception as e:
 	sys.exit(f'Compile error: {e}')
 
-print('Removing source files...')
-os.remove('./auth.py')
-os.remove('./clean.py')
-os.remove('./main.go')
-
 sys.exit('Compile completed!')
