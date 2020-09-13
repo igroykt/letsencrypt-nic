@@ -8,7 +8,7 @@ import glob
 import sys
 import os
 
-if click.confirm('Do you want to continue? This operation will remove all files with source code.', default = False):
+if click.confirm('Do you want to continue?', default = False):
 	pass
 else:
 	sys.exit()
