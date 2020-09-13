@@ -38,6 +38,8 @@ mv config.sample.ini config.ini
 * FROM -> адрес почты от имени которого будет отправлена почта
 * TO -> адресат, которому должно уйти письмо
 
+USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section". Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
+
 ## Сборка
 Перед сборкой убедитесь, что в compile.py в строке shebang указан верный путь к интерпретатору (обычно должен совпадать с значением PYTHON в config.ini). Далее можно запустить ./compile.py.
 
