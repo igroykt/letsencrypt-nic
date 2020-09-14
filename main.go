@@ -142,6 +142,8 @@ func main() {
 	SMTPPASS := cfg.Section("SMTP").Key("PASSWORD").String()
 	SENDER := cfg.Section("SMTP").Key("FROM").String()
 	RECIPIENT := cfg.Section("SMTP").Key("TO").String()
+        POSTHOOKENABLED := cfg.Section("POSTHOOK").Key("ENABLED").MustBool()
+        POSTHOOKSCRIPT := cfg.Section("POSTHOOK").Key("SCRIPT").String()
 	HOSTNAME, err := os.Hostname()
 	/*_ = TESTCONFIG
 	_ = RELOADCONFIG
@@ -182,7 +184,7 @@ func main() {
 	fmt.Println("[+] ACME Test: [ START ]")
 	log.Println("ACME Test Start")
 	stdout, stderr, err = acmeTest(maindomain, domains, ADMINEMAIL, PYTHON)
-	_ = stdout
+	log.Println(stdout)
 	if err != nil {
 		fmt.Println("[-] ACME Test: [ FAILED ]: " + stderr + " " + err.Error())
 		log.Println("ACME Test Failed: " + stderr + " " + err.Error())
@@ -205,7 +207,7 @@ func main() {
 	fmt.Println("[+] ACME Run: [ START ]")
 	log.Println("ACME Run Start")
 	stdout, stderr, err = acmeRun(maindomain, domains, ADMINEMAIL, PYTHON)
-	_ = stdout
+	log.Println(stdout)
 	if err != nil {
 		fmt.Println("[-] ACME Run: [ FAILED ]: " + stderr + " " + err.Error())
 		log.Println("ACME Run Failed: " + stderr + " " + err.Error())
@@ -223,7 +225,7 @@ func main() {
 	fmt.Println("[+] SERVER Reload: [ START ]")
 	log.Println("SERVER Reload Start")
 	stdout, stderr, err = reloadServer(TESTCONFIG, RELOADCONFIG)
-	_ = stdout
+	log.Println(stdout)
 	if err != nil {
 		fmt.Println("[-] SERVER Reload: [ FAILED ]: " + stderr + " " + err.Error())
 		log.Println("SERVER Reload Failed: " + stderr + " " + err.Error())
@@ -239,6 +241,24 @@ func main() {
 	log.Println("SERVER Reload Done")
 
 	destroyCredentials()
+
+        if POSTHOOKENABLED {
+		stdout, stderr, err = call(POSTHOOKSCRIPT, "/bin/bash")
+		log.Println(stdout)
+		if err != nil {
+			fmt.Println("[-] POST HOOK Run: [ FAILED ]: " + stderr + " " + err.Error())
+			log.Println("POST HOOK Run Failed: " + stderr + " " + err.Error())
+			if SMTPENABLED {
+                        	subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
+                        	err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+                        	fmt.Println("SMTP server error: " + err.Error())
+                        	log.Println("SMTP server error: " + err.Error())
+                	}
+			os.Exit(1)
+		}
+		fmt.Println("[+] POST HOOK Run: [ DONE ]")
+		log.Println("POST HOOK Run Done")
+	}
 
 	fmt.Println("-= Program completed! =-")
 }
