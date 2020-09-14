@@ -39,6 +39,10 @@ mv config.sample.ini config.ini
 * FROM -> адрес почты от имени которого будет отправлена почта
 * TO -> адресат, которому должно уйти письмо
 
+[POSTHOOK]
+* ENABLED -> флаг для провеки включена ли опция
+* SCRIPT -> путь до исполняемого скрипта
+
 USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section". Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
 
 ## Сборка
