@@ -10,6 +10,7 @@
 ## Установка
 ```
 pip3 install -r requirements.txt
+go get gopkg.in/ini.v1
 mv config.sample.ini config.ini
 ```
 
@@ -51,3 +52,6 @@ USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "C
 ```
 ./main -t
 ```
+
+## Известные баги
+Пакет nic-api пока, что не понимает записи типа AAAA. Потому, если у вас уже есть такая запись, то вам надо вручную модифицировать models.py. Подробнее в этом треде: https://github.com/andr1an/nic-api/issues/6.
