@@ -17,6 +17,7 @@ CLIENT_ID = os.getenv('NICID')
 CLIENT_SECRET = os.getenv('NICSECRET')
 TOKEN_FILE = config.get('GENERAL', 'TOKEN_FILE')
 SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
+LOG_FILE = config.get('GENERAL', 'LOG_FILE')
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 
 logging.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(message)s', level = logging.ERROR, filename = LOG_FILE)
