@@ -45,22 +45,22 @@ try:
         	token_filename = TOKEN_FILE
     	)
 except Exception as err:
-    	print(f"API authorize: {err}")
-    	print(f"Token refresh...")
+	print(f"API authorize: {err}")
+	print(f"Token refresh...")
 	logging.error(f"clean.py - api.authorize error: {err}")
-    	os.remove(TOKEN_FILE)
-    	api.authorize(
-        	username = USERNAME,
-        	password = PASSWORD,
-        	token_filename = TOKEN_FILE
-    	)
+	os.remove(TOKEN_FILE)
+	api.authorize(
+		username = USERNAME,
+		password = PASSWORD,
+		token_filename = TOKEN_FILE
+	)
 
 try:
     	print("Retrieving DNS records...")
     	records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
 except Exception:
 	logging.error(f"clean.py - api.records error: {err}")
-    	records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
+	records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
 
 def findTXTID(data):
     ids = []
