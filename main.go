@@ -187,6 +187,7 @@ func main() {
 	LOGFILE := cfg.Section("GENERAL").Key("LOG_FILE").String()
 	PYTHON := cfg.Section("GENERAL").Key("PYTHON").String()
 	SHELL := cfg.Section("GENERAL").Key("OS_SHELL").String()
+	WEBSERVERENABLED := cfg.Section("WEBSERVER").Key("ENABLED").MustBool()
 	TESTCONFIG := cfg.Section("WEBSERVER").Key("TEST_CONFIG").String()
 	RELOADCONFIG := cfg.Section("WEBSERVER").Key("RELOAD_CONFIG").String()
 	SMTPENABLED := cfg.Section("SMTP").Key("ENABLED").MustBool()
@@ -284,27 +285,29 @@ func main() {
 	fmt.Println("[+] ACME Run: [ DONE ]")
 	log.Println("ACME Run Done")
 
-	fmt.Println("[+] SERVER Reload: [ START ]")
-	log.Println("SERVER Reload Start")
-	stdout, stderr, err = reloadServer(TESTCONFIG, RELOADCONFIG, SHELL)
-	log.Println(stdout)
-	if err != nil {
-		fmt.Println("[-] SERVER Reload: [ FAILED ]: " + stderr + " " + err.Error())
-		log.Println("SERVER Reload Failed: " + stderr + " " + err.Error())
-		if SMTPENABLED {
-			subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
-			if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
-				err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
-			} else {
-				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+	if WEBSERVERENABLED {
+		fmt.Println("[+] SERVER Reload: [ START ]")
+		log.Println("SERVER Reload Start")
+		stdout, stderr, err = reloadServer(TESTCONFIG, RELOADCONFIG, SHELL)
+		log.Println(stdout)
+		if err != nil {
+			fmt.Println("[-] SERVER Reload: [ FAILED ]: " + stderr + " " + err.Error())
+			log.Println("SERVER Reload Failed: " + stderr + " " + err.Error())
+			if SMTPENABLED {
+				subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
+				if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
+					err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+				} else {
+					err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+				}
+				fmt.Println("SMTP server error: " + err.Error())
+				log.Println("SMTP server error: " + err.Error())
 			}
-			fmt.Println("SMTP server error: " + err.Error())
-			log.Println("SMTP server error: " + err.Error())
+			os.Exit(1)
 		}
-		os.Exit(1)
+		fmt.Println("[+] SERVER Reload: [ DONE ]")
+		log.Println("SERVER Reload Done")
 	}
-	fmt.Println("[+] SERVER Reload: [ DONE ]")
-	log.Println("SERVER Reload Done")
 
 	destroyCredentials()
 
