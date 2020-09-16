@@ -48,7 +48,7 @@ rm auth.py clean.py main.go
 
 USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section". Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
 
-Если MTA без аутентификации, то в config.ini оставьте пустыми значения USERNAME и PASSWORD.
+Если MTA без аутентификации, то в config.ini оставьте пустыми значения USERNAME и PASSWORD в секции SMTP.
 
 POSTHOOK позволяет в конце запустить ваш скрипт. Может пригодится, если например захотите синхронизировать сертификаты на другие сервера.
 
