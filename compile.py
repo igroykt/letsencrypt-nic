@@ -3,15 +3,9 @@
 import py_compile
 import subprocess
 import shutil
-import click
 import glob
 import sys
 import os
-
-if click.confirm('Do you want to continue?', default = False):
-	pass
-else:
-	sys.exit()
 
 def list2str(list):
 	string = ""
