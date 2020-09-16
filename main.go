@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"encoding/base64"
 
 	"gopkg.in/ini.v1"
 )
@@ -27,9 +28,6 @@ const CLIENTID string = "XXX"
 // CLIENTSECRET : NIC Oauth client secret
 const CLIENTSECRET string = "XXX"
 
-// SHELL : OS shell
-const SHELL string = "/bin/bash"
-
 // End of section
 
 func call(cmd string, shell string) (string, string, error) {
@@ -45,8 +43,7 @@ func call(cmd string, shell string) (string, string, error) {
 func sendmail(server string, port int, user string, pass string, from string, to []string, subject string, message string) error {
 	smtpserver := server + ":" + strconv.Itoa(port)
 	body := "Subject: " + subject + "\n\n" + message
-	to_ := strings.Join(to, ",")
-	status := smtp.SendMail(smtpserver, smtp.PlainAuth("", user, pass, server), from, to_, []byte(body))
+	status := smtp.SendMail(smtpserver, smtp.PlainAuth("", user, pass, server), from, to, []byte(body))
 	return status
 }
 
@@ -113,7 +110,7 @@ func makeList(zone []string) string {
 	return data
 }
 
-func acmeTest(maindomain string, domains string, adminemail string, python string) (string, string, error) {
+func acmeTest(maindomain string, domains string, adminemail string, python string, SHELL string) (string, string, error) {
 	var out string
 	var errout string
 	var err error
@@ -125,7 +122,7 @@ func acmeTest(maindomain string, domains string, adminemail string, python strin
 	return out, errout, err
 }
 
-func acmeRun(maindomain string, domains string, adminemail string, python string) (string, string, error) {
+func acmeRun(maindomain string, domains string, adminemail string, python string, SHELL string) (string, string, error) {
 	var out string
 	var errout string
 	var err error
@@ -137,7 +134,7 @@ func acmeRun(maindomain string, domains string, adminemail string, python string
 	return out, errout, err
 }
 
-func reloadServer(testcmd string, reloadcmd string) (string, string, error) {
+func reloadServer(testcmd string, reloadcmd string, SHELL string) (string, string, error) {
 	out, errout, err := call(testcmd, SHELL)
 	if err != nil {
 		return out, errout, err
@@ -189,6 +186,7 @@ func main() {
 	ADMINEMAIL := cfg.Section("GENERAL").Key("ADMIN_EMAIL").String()
 	LOGFILE := cfg.Section("GENERAL").Key("LOG_FILE").String()
 	PYTHON := cfg.Section("GENERAL").Key("PYTHON").String()
+	SHELL := cfg.Section("GENERAL").Key("OS_SHELL").String()
 	TESTCONFIG := cfg.Section("WEBSERVER").Key("TEST_CONFIG").String()
 	RELOADCONFIG := cfg.Section("WEBSERVER").Key("RELOAD_CONFIG").String()
 	SMTPENABLED := cfg.Section("SMTP").Key("ENABLED").MustBool()
@@ -239,7 +237,7 @@ func main() {
 
 	fmt.Println("[+] ACME Test: [ START ]")
 	log.Println("ACME Test Start")
-	stdout, stderr, err = acmeTest(maindomain, domains, ADMINEMAIL, PYTHON)
+	stdout, stderr, err = acmeTest(maindomain, domains, ADMINEMAIL, PYTHON, SHELL)
 	log.Println(stdout)
 	if err != nil {
 		fmt.Println("[-] ACME Test: [ FAILED ]: " + stderr + " " + err.Error())
@@ -266,7 +264,7 @@ func main() {
 
 	fmt.Println("[+] ACME Run: [ START ]")
 	log.Println("ACME Run Start")
-	stdout, stderr, err = acmeRun(maindomain, domains, ADMINEMAIL, PYTHON)
+	stdout, stderr, err = acmeRun(maindomain, domains, ADMINEMAIL, PYTHON, SHELL)
 	log.Println(stdout)
 	if err != nil {
 		fmt.Println("[-] ACME Run: [ FAILED ]: " + stderr + " " + err.Error())
@@ -288,7 +286,7 @@ func main() {
 
 	fmt.Println("[+] SERVER Reload: [ START ]")
 	log.Println("SERVER Reload Start")
-	stdout, stderr, err = reloadServer(TESTCONFIG, RELOADCONFIG)
+	stdout, stderr, err = reloadServer(TESTCONFIG, RELOADCONFIG, SHELL)
 	log.Println(stdout)
 	if err != nil {
 		fmt.Println("[-] SERVER Reload: [ FAILED ]: " + stderr + " " + err.Error())
