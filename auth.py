@@ -8,9 +8,9 @@ import logging
 
 config = ConfigParser()
 try:
-    config.read('config.ini')
+	config.read('config.ini')
 except Exception as err:
-    sys.exit(f"Config parse: {err}")
+	sys.exit(f"Config parse: {err}")
 
 USERNAME = os.getenv('NICUSER')
 PASSWORD = os.getenv('NICPASS')
@@ -28,8 +28,8 @@ logging.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(message)s', level 
 
 try:
 	oauth_config = {
-    		'APP_LOGIN': CLIENT_ID,
-    		'APP_PASSWORD': CLIENT_SECRET
+		'APP_LOGIN': CLIENT_ID,
+		'APP_PASSWORD': CLIENT_SECRET
 	}
 except Exception as err:
 	logging.error(f"auth.py - oauth_config error: {err}")
@@ -40,24 +40,24 @@ except Exception as err:
 	logging.error(f"auth.py - DnsApi error: {err}")
 
 if not os.path.exists(TOKEN_FILE):
-    open(TOKEN_FILE, 'w').close()
+	open(TOKEN_FILE, 'w').close()
 
 try:
 	api.authorize(
-        	username = USERNAME,
-        	password = PASSWORD,
-        	token_filename = TOKEN_FILE
-    	)
+		username = USERNAME,
+		password = PASSWORD,
+		token_filename = TOKEN_FILE
+	)
 except Exception as err:
 	print(f"API authorize: {err}")
 	print(f"Token refresh...")
 	logging.error(f"auth.py - api.authorize error: {err}")
 	os.remove(TOKEN_FILE)
 	api.authorize(
-        	username = USERNAME,
-        	password = PASSWORD,
-        	token_filename = TOKEN_FILE
-    	)
+		username = USERNAME,
+		password = PASSWORD,
+		token_filename = TOKEN_FILE
+	)
 
 try:
 	print("Creating TXT record...")
