@@ -12,6 +12,9 @@
 pip3 install -r requirements.txt
 go get gopkg.in/ini.v1
 mv config.sample.ini config.ini
+# подправить config.ini
+./compile.py
+rm auth.py clean.py main.go
 ```
 
 ## Настройка
@@ -45,6 +48,8 @@ mv config.sample.ini config.ini
 
 USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section". Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
 
+Если MTA без аутентификации, то в config.ini оставьте пустыми значения USERNAME и PASSWORD.
+
 POSTHOOK позволяет в конце запустить ваш скрипт. Может пригодится, если например захотите синхронизировать сертификаты на другие сервера.
 
 ## Сборка
@@ -59,5 +64,8 @@ POSTHOOK позволяет в конце запустить ваш скрипт
 ./main -t
 ```
 
-## Известные баги
-Пакет nic-api пока, что не понимает записи типа AAAA. Потому, если у вас уже есть такая запись, то вам надо вручную модифицировать models.py. Подробнее в этом треде: https://github.com/andr1an/nic-api/issues/6.
+## Cron
+```
+#m      #h      #dom    #mon    #dow    #command
+0 	0 	1 	* 	* 	/path/to/letsencrypt-nic/main
+```
