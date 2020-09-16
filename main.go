@@ -27,6 +27,9 @@ const CLIENTID string = "XXX"
 // CLIENTSECRET : NIC Oauth client secret
 const CLIENTSECRET string = "XXX"
 
+// SHELL : OS shell
+const SHELL string = "/bin/bash"
+
 // End of section
 
 func call(cmd string, shell string) (string, string, error) {
@@ -39,11 +42,64 @@ func call(cmd string, shell string) (string, string, error) {
 	return stdout.String(), stderr.String(), err
 }
 
-func sendmail(server string, port int, user string, pass string, from string, to string, subject string, message string) error {
+func sendmail(server string, port int, user string, pass string, from string, to []string, subject string, message string) error {
 	smtpserver := server + ":" + strconv.Itoa(port)
-	body := subject + "\n\n" + message
-	status := smtp.SendMail(smtpserver, smtp.PlainAuth("", user, pass, server), from, []string{to}, []byte(body))
+	body := "Subject: " + subject + "\n\n" + message
+	to_ := strings.Join(to, ",")
+	status := smtp.SendMail(smtpserver, smtp.PlainAuth("", user, pass, server), from, to_, []byte(body))
 	return status
+}
+
+// sendmailNoAuth : https://gadelkareem.com/2018/05/03/golang-send-mail-without-authentication-using-localhost-sendmail-or-postfix/
+func sendmailNoAuth(server string, port int, from string, to []string, subject string, message string) error {
+	addr := server + ":" + strconv.Itoa(port)
+
+        r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
+
+	fmt.Println("Connecting to server...")
+        c, err := smtp.Dial(addr)
+        if err != nil {
+                return err
+        }
+        defer c.Close()
+
+	fmt.Println("Looking for sender")
+        if err = c.Mail(r.Replace(from)); err != nil {
+                return err
+        }
+
+	fmt.Println("Looking for receipient")
+        for i := range to {
+                to[i] = r.Replace(to[i])
+                if err = c.Rcpt(to[i]); err != nil {
+                        return err
+                }
+        }
+
+	fmt.Println("Storing data in memory...")
+        w, err := c.Data()
+        if err != nil {
+                return err
+        }
+
+	fmt.Println("Preparing message...")
+        msg := "To: " + strings.Join(to, ",") + "\r\n" +
+                "From: " + from + "\r\n" +
+                "Subject: " + subject + "\r\n" +
+                "Content-Type: text/html; charset=\"UTF-8\"\r\n" +
+                "Content-Transfer-Encoding: base64\r\n" +
+                "\r\n" + base64.StdEncoding.EncodeToString([]byte(message))
+
+	fmt.Println("Sending message...")
+        _, err = w.Write([]byte(msg))
+        if err != nil {
+                return err
+        }
+        err = w.Close()
+        if err != nil {
+                return err
+        }
+        return c.Quit()
 }
 
 func makeList(zone []string) string {
@@ -65,7 +121,7 @@ func acmeTest(maindomain string, domains string, adminemail string, python strin
 	if err != nil {
 		return out, errout, err
 	}
-	out, errout, err = call("/usr/bin/certbot certonly --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --dry-run --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, "/bin/bash")
+	out, errout, err = call("/usr/bin/certbot certonly --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --dry-run --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
 	return out, errout, err
 }
 
@@ -77,16 +133,16 @@ func acmeRun(maindomain string, domains string, adminemail string, python string
 	if err != nil {
 		return out, errout, err
 	}
-	out, errout, err = call("/usr/bin/certbot certonly --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, "/bin/bash")
+	out, errout, err = call("/usr/bin/certbot certonly --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
 	return out, errout, err
 }
 
 func reloadServer(testcmd string, reloadcmd string) (string, string, error) {
-	out, errout, err := call(testcmd, "/bin/bash")
+	out, errout, err := call(testcmd, SHELL)
 	if err != nil {
 		return out, errout, err
 	}
-	out, errout, err = call(reloadcmd, "/bin/bash")
+	out, errout, err = call(reloadcmd, SHELL)
 	return out, errout, err
 }
 
@@ -141,7 +197,7 @@ func main() {
 	SMTPUSER := cfg.Section("SMTP").Key("USERNAME").String()
 	SMTPPASS := cfg.Section("SMTP").Key("PASSWORD").String()
 	SENDER := cfg.Section("SMTP").Key("FROM").String()
-	RECIPIENT := cfg.Section("SMTP").Key("TO").String()
+	RECIPIENT := cfg.Section("SMTP").Key("TO").Strings(",")
         POSTHOOKENABLED := cfg.Section("POSTHOOK").Key("ENABLED").MustBool()
         POSTHOOKSCRIPT := cfg.Section("POSTHOOK").Key("SCRIPT").String()
 	HOSTNAME, err := os.Hostname()
@@ -190,7 +246,11 @@ func main() {
 		log.Println("ACME Test Failed: " + stderr + " " + err.Error())
 		if SMTPENABLED {
 			subject := "[" + HOSTNAME + "] ACME Test: [ FAILED ]"
-			err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
+				err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			} else {
+				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			}
 			fmt.Println("SMTP server error: " + err.Error())
 			log.Println("SMTP server error: " + err.Error())
 		}
@@ -213,7 +273,11 @@ func main() {
 		log.Println("ACME Run Failed: " + stderr + " " + err.Error())
 		if SMTPENABLED {
 			subject := "[" + HOSTNAME + "] ACME Run: [ FAILED ]"
-			err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
+				err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			} else {
+				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			}
 			fmt.Println("SMTP server error: " + err.Error())
 			log.Println("SMTP server error: " + err.Error())
 		}
@@ -231,7 +295,11 @@ func main() {
 		log.Println("SERVER Reload Failed: " + stderr + " " + err.Error())
 		if SMTPENABLED {
 			subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
-			err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
+				err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			} else {
+				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+			}
 			fmt.Println("SMTP server error: " + err.Error())
 			log.Println("SMTP server error: " + err.Error())
 		}
@@ -243,14 +311,18 @@ func main() {
 	destroyCredentials()
 
         if POSTHOOKENABLED {
-		stdout, stderr, err = call(POSTHOOKSCRIPT, "/bin/bash")
+		stdout, stderr, err = call(POSTHOOKSCRIPT, SHELL)
 		log.Println(stdout)
 		if err != nil {
 			fmt.Println("[-] POST HOOK Run: [ FAILED ]: " + stderr + " " + err.Error())
 			log.Println("POST HOOK Run Failed: " + stderr + " " + err.Error())
 			if SMTPENABLED {
                         	subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
-                        	err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+				if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
+                        		err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+				} else {
+					err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+				}
                         	fmt.Println("SMTP server error: " + err.Error())
                         	log.Println("SMTP server error: " + err.Error())
                 	}
