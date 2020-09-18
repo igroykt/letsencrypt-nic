@@ -53,19 +53,16 @@ func sendmailNoAuth(server string, port int, from string, to []string, subject s
 
         r := strings.NewReplacer("\r\n", "", "\r", "", "\n", "", "%0a", "", "%0d", "")
 
-	fmt.Println("Connecting to server...")
         c, err := smtp.Dial(addr)
         if err != nil {
                 return err
         }
         defer c.Close()
 
-	fmt.Println("Looking for sender")
         if err = c.Mail(r.Replace(from)); err != nil {
                 return err
         }
 
-	fmt.Println("Looking for receipient")
         for i := range to {
                 to[i] = r.Replace(to[i])
                 if err = c.Rcpt(to[i]); err != nil {
@@ -73,13 +70,11 @@ func sendmailNoAuth(server string, port int, from string, to []string, subject s
                 }
         }
 
-	fmt.Println("Storing data in memory...")
         w, err := c.Data()
         if err != nil {
                 return err
         }
 
-	fmt.Println("Preparing message...")
         msg := "To: " + strings.Join(to, ",") + "\r\n" +
                 "From: " + from + "\r\n" +
                 "Subject: " + subject + "\r\n" +
@@ -87,7 +82,6 @@ func sendmailNoAuth(server string, port int, from string, to []string, subject s
                 "Content-Transfer-Encoding: base64\r\n" +
                 "\r\n" + base64.StdEncoding.EncodeToString([]byte(message))
 
-	fmt.Println("Sending message...")
         _, err = w.Write([]byte(msg))
         if err != nil {
                 return err
@@ -250,8 +244,10 @@ func main() {
 			} else {
 				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 			}
-			fmt.Println("SMTP server error: " + err.Error())
-			log.Println("SMTP server error: " + err.Error())
+			if err != nil {
+				fmt.Println("SMTP server error: " + err.Error())
+				log.Println("SMTP server error: " + err.Error())
+			}
 		}
 		os.Exit(1)
 	}
@@ -277,8 +273,10 @@ func main() {
 			} else {
 				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 			}
-			fmt.Println("SMTP server error: " + err.Error())
-			log.Println("SMTP server error: " + err.Error())
+			if err != nil {
+				fmt.Println("SMTP server error: " + err.Error())
+				log.Println("SMTP server error: " + err.Error())
+			}
 		}
 		os.Exit(1)
 	}
@@ -300,8 +298,10 @@ func main() {
 				} else {
 					err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 				}
-				fmt.Println("SMTP server error: " + err.Error())
-				log.Println("SMTP server error: " + err.Error())
+				if err != nil {
+					fmt.Println("SMTP server error: " + err.Error())
+					log.Println("SMTP server error: " + err.Error())
+				}
 			}
 			os.Exit(1)
 		}
@@ -318,15 +318,17 @@ func main() {
 			fmt.Println("[-] POST HOOK Run: [ FAILED ]: " + stderr + " " + err.Error())
 			log.Println("POST HOOK Run Failed: " + stderr + " " + err.Error())
 			if SMTPENABLED {
-                        	subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
+				subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
 				if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
-                        		err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+					err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 				} else {
 					err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 				}
-                        	fmt.Println("SMTP server error: " + err.Error())
-                        	log.Println("SMTP server error: " + err.Error())
-                	}
+				if err != nil {
+					fmt.Println("SMTP server error: " + err.Error())
+					log.Println("SMTP server error: " + err.Error())
+				}
+			}
 			os.Exit(1)
 		}
 		fmt.Println("[+] POST HOOK Run: [ DONE ]")
