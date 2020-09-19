@@ -179,23 +179,43 @@ func main() {
 
 	// Set config
 	ZONE := cfg.Section("GENERAL").Key("ZONE").Strings(",")
+	if len(ZONE) == 0 {
+		fmt.Println("Error: ZONE not set")
+		os.Exit(1)
+	}
 	ADMINEMAIL := cfg.Section("GENERAL").Key("ADMIN_EMAIL").String()
-	LOGFILE := cfg.Section("GENERAL").Key("LOG_FILE").String()
-	PYTHON := cfg.Section("GENERAL").Key("PYTHON").String()
-	SHELL := cfg.Section("GENERAL").Key("OS_SHELL").String()
-	CONFIG_DIR := cfg.Section("GENERAL").Key("LE_CONFIG_DIR").String()
-	WEBSERVERENABLED := cfg.Section("WEBSERVER").Key("ENABLED").MustBool()
-	TESTCONFIG := cfg.Section("WEBSERVER").Key("TEST_CONFIG").String()
-	RELOADCONFIG := cfg.Section("WEBSERVER").Key("RELOAD_CONFIG").String()
-	SMTPENABLED := cfg.Section("SMTP").Key("ENABLED").MustBool()
-	SMTPSERVER := cfg.Section("SMTP").Key("SERVER").String()
-	SMTPPORT := cfg.Section("SMTP").Key("PORT").MustInt()
+	if len(ADMINEMAIL) == 0 {
+		fmt.Println("Error: ADMINEMAIL not set")
+		os.Exit(1)
+	}
+	LOGFILE := cfg.Section("GENERAL").Key("LOG_FILE").In("letsencrypt-nic.log", []string{"str", "arr", "types"})
+	PYTHON := cfg.Section("GENERAL").Key("PYTHON").In("/usr/bin/python3", []string{"str", "arr", "types"})
+	SHELL := cfg.Section("GENERAL").Key("OS_SHELL").In("/bin/bash", []string{"str", "arr", "types"})
+	CONFIG_DIR := cfg.Section("GENERAL").Key("LE_CONFIG_DIR").In("/etc/letsencrypt", []string{"str", "arr", "types"})
+	WEBSERVERENABLED := cfg.Section("WEBSERVER").Key("ENABLED").MustBool(false)
+	TESTCONFIG := cfg.Section("WEBSERVER").Key("TEST_CONFIG").In("/usr/sbin/nginx -t", []string{"str", "arr", "types"})
+	RELOADCONFIG := cfg.Section("WEBSERVER").Key("RELOAD_CONFIG").In("/usr/sbin/nginx -s reload", []string{"str", "arr", "types"})
+	SMTPENABLED := cfg.Section("SMTP").Key("ENABLED").MustBool(false)
+	SMTPSERVER := cfg.Section("SMTP").Key("SERVER").In("127.0.0.1", []string{"str", "arr", "types"})
+	SMTPPORT := cfg.Section("SMTP").Key("PORT").MustInt(25)
 	SMTPUSER := cfg.Section("SMTP").Key("USERNAME").String()
 	SMTPPASS := cfg.Section("SMTP").Key("PASSWORD").String()
 	SENDER := cfg.Section("SMTP").Key("FROM").String()
+	if SMTPENABLED && len(SENDER) == 0 {
+		fmt.Println("Error: SENDER not set")
+		os.Exit(1)
+	}
 	RECIPIENT := cfg.Section("SMTP").Key("TO").Strings(",")
-        POSTHOOKENABLED := cfg.Section("POSTHOOK").Key("ENABLED").MustBool()
+	if SMTPENABLED && len(RECIPIENT) == 0 {
+		fmt.Println("Error: RECIPIENT not set")
+		os.Exit(1)
+	}
+        POSTHOOKENABLED := cfg.Section("POSTHOOK").Key("ENABLED").MustBool(false)
         POSTHOOKSCRIPT := cfg.Section("POSTHOOK").Key("SCRIPT").String()
+	if POSTHOOKENABLED && len(POSTHOOKSCRIPT) == 0 {
+		fmt.Println("Error: POSTHOOKSCRIPT not set")
+		os.Exit(1)
+	}
 	HOSTNAME, err := os.Hostname()
 	/*_ = TESTCONFIG
 	_ = RELOADCONFIG
@@ -214,8 +234,7 @@ func main() {
 
 	// Set logging
 	if fileExists(LOGFILE) {
-		out := os.Remove(LOGFILE)
-		_ = out
+		os.Remove(LOGFILE)
 	}
 	logfile, err := os.OpenFile(LOGFILE, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
