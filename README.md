@@ -21,33 +21,33 @@ rm auth.py clean.py main.go
 Путь к интерпретатору Python требуется, чтобы запускать бинарные файлы. Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register. SERVICE_ID можно найти в личном кабинете в разделе "Услуги/DNS-хостинг" в столбце "Услуга".
 
 [GENERAL]
-* TOKEN_FILE -> файл, в котором будет хранится access token
-* SERVICE_ID -> идентификатор услуги
-* ZONE -> список доменных зон (разделенные запятыми)
-* ADMIN_EMAIL -> адрес email админа, который надо указывать для certbot
-* TTL -> время жизни TXT записи
-* SLEEP -> время ожидания пока TXT запись подхватится публичными DNS серверами
-* LOG_FILE -> файл, в который будет записываться все происходящее во время работы приложения
-* OS_SHELL -> shell операционной системы
-* LE_CONFIG_DIR -> путь к директории хранения конфигов и сертификатов letsencrypt
+* TOKEN_FILE -> файл, в котором будет хранится access token					(default: nic_token.json)
+* SERVICE_ID -> идентификатор услуги								(default: none)
+* ZONE -> список доменных зон (разделенные запятыми)						(default: none)
+* ADMIN_EMAIL -> адрес email админа, который надо указывать для certbot				(default: none)
+* TTL -> время жизни TXT записи									(default: 10)
+* SLEEP -> время ожидания пока TXT запись подхватится публичными DNS серверами			(default: 60)
+* LOG_FILE -> файл, в который будет записываться все происходящее во время работы приложения	(default: letsencrypt-nic.log)
+* OS_SHELL -> shell операционной системы							(default: /bin/bash)
+* LE_CONFIG_DIR -> путь к директории хранения конфигов и сертификатов letsencrypt		(default: /etc/letsencrypt)
 
 [WEBSERVER]
-* ENABLED -> флаг для проверки включена ли опция
-* TEST_CONFIG -> команда для проверки конфигурации веб-сервера
-* RELOAD_CONFIG -> команда для перезапуска веб-сервера
+* ENABLED -> флаг для проверки включена ли опция						(default: false)
+* TEST_CONFIG -> команда для проверки конфигурации веб-сервера					(default: /usr/sbin/nginx -t)
+* RELOAD_CONFIG -> команда для перезапуска веб-сервера						(default: /usr/sbin/nginx -s reload)
 
 [SMTP]
-* ENABLED -> флаг для проверки включена ли опция
-* SERVER -> адрес сервера
-* PORT -> порт сервера
-* USERNAME -> имя пользователя
-* PASSWORD -> пароль пользователя
-* FROM -> адрес почты от имени которого будет отправлена почта
-* TO -> адресат, которому должно уйти письмо
+* ENABLED -> флаг для проверки включена ли опция						(default: false)
+* SERVER -> адрес сервера									(default: 127.0.0.1)
+* PORT -> порт сервера										(default: 25)
+* USERNAME -> имя пользователя									(default: none)
+* PASSWORD -> пароль пользователя								(default: none)
+* FROM -> адрес почты от имени которого будет отправлена почта					(default: none)
+* TO -> адресат, которому должно уйти письмо							(default: none)
 
 [POSTHOOK]
-* ENABLED -> флаг для провеки включена ли опция
-* SCRIPT -> путь до исполняемого скрипта
+* ENABLED -> флаг для провеки включена ли опция							(default: false)
+* SCRIPT -> путь до исполняемого скрипта							(default: none)
 
 USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section". Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
 
