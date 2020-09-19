@@ -334,13 +334,15 @@ func main() {
 	destroyCredentials()
 
         if POSTHOOKENABLED {
+		fmt.Println("[+] POSTHOOK Script: [ START ]")
+		log.Println("POSTHOOK Script Start")
 		stdout, stderr, err = call(POSTHOOKSCRIPT, SHELL)
 		log.Println(stdout)
 		if err != nil {
-			fmt.Println("[-] POST HOOK Run: [ FAILED ]: " + stderr + " " + err.Error())
-			log.Println("POST HOOK Run Failed: " + stderr + " " + err.Error())
+			fmt.Println("[-] POSTHOOK Script: [ FAILED ]: " + stderr + " " + err.Error())
+			log.Println("POSTHOOK Script Failed: " + stderr + " " + err.Error())
 			if SMTPENABLED {
-				subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
+				subject := "[" + HOSTNAME + "] POSTHOOK Script: [ FAILED ]"
 				if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
 					err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 				} else {
@@ -353,8 +355,8 @@ func main() {
 			}
 			os.Exit(1)
 		}
-		fmt.Println("[+] POST HOOK Run: [ DONE ]")
-		log.Println("POST HOOK Run Done")
+		fmt.Println("[+] POSTHOOK Script: [ DONE ]")
+		log.Println("POSTHOOK Script Done")
 	}
 
 	fmt.Println("-= Program completed! =-")
