@@ -29,6 +29,7 @@ rm auth.py clean.py main.go
 * SLEEP -> время ожидания пока TXT запись подхватится публичными DNS серверами
 * LOG_FILE -> файл, в который будет записываться все происходящее во время работы приложения
 * OS_SHELL -> shell операционной системы
+* LE_CONFIG_DIR -> путь к директории хранения конфигов и сертификатов letsencrypt
 
 [WEBSERVER]
 * ENABLED -> флаг для проверки включена ли опция
@@ -49,6 +50,8 @@ rm auth.py clean.py main.go
 * SCRIPT -> путь до исполняемого скрипта
 
 USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section". Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
+
+LE_CONFIG_DIR полезен в том случае, когда для некоторых ресурсов надо выписывать сертификаты по http challenge, а некоторые по dns challenge. В таком случае для dns challenge можно указать путь скажем /etc/letsencrypt-dns, тогда будет создана эта директория и аккаунты, конфиги и сертификаты для dns challenge будут храниться там.
 
 Если MTA без аутентификации, то в config.ini оставьте пустыми значения USERNAME и PASSWORD в секции SMTP.
 
