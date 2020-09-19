@@ -104,7 +104,7 @@ func makeList(zone []string) string {
 	return data
 }
 
-func acmeTest(maindomain string, domains string, adminemail string, python string, SHELL string) (string, string, error) {
+func acmeTest(maindomain string, domains string, adminemail string, config_dir string, python string, SHELL string) (string, string, error) {
 	var out string
 	var errout string
 	var err error
@@ -112,11 +112,11 @@ func acmeTest(maindomain string, domains string, adminemail string, python strin
 	if err != nil {
 		return out, errout, err
 	}
-	out, errout, err = call("/usr/bin/certbot certonly --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --dry-run --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
+	out, errout, err = call("/usr/bin/certbot certonly --config-dir "+config_dir+" --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --dry-run --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
 	return out, errout, err
 }
 
-func acmeRun(maindomain string, domains string, adminemail string, python string, SHELL string) (string, string, error) {
+func acmeRun(maindomain string, domains string, adminemail string, config_dir string, python string, SHELL string) (string, string, error) {
 	var out string
 	var errout string
 	var err error
@@ -124,7 +124,7 @@ func acmeRun(maindomain string, domains string, adminemail string, python string
 	if err != nil {
 		return out, errout, err
 	}
-	out, errout, err = call("/usr/bin/certbot certonly --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
+	out, errout, err = call("/usr/bin/certbot certonly --config-dir "+config_dir+" --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
 	return out, errout, err
 }
 
@@ -166,7 +166,9 @@ func main() {
 	var stderr string
 	var argument string
 
-	argument = os.Args[1]
+	if len(os.Args) > 1 {
+		argument = os.Args[1]
+	}
 
 	// Read config
 	cfg, err := ini.Load("config.ini")
@@ -181,6 +183,7 @@ func main() {
 	LOGFILE := cfg.Section("GENERAL").Key("LOG_FILE").String()
 	PYTHON := cfg.Section("GENERAL").Key("PYTHON").String()
 	SHELL := cfg.Section("GENERAL").Key("OS_SHELL").String()
+	CONFIG_DIR := cfg.Section("GENERAL").Key("LE_CONFIG_DIR").String()
 	WEBSERVERENABLED := cfg.Section("WEBSERVER").Key("ENABLED").MustBool()
 	TESTCONFIG := cfg.Section("WEBSERVER").Key("TEST_CONFIG").String()
 	RELOADCONFIG := cfg.Section("WEBSERVER").Key("RELOAD_CONFIG").String()
@@ -232,7 +235,7 @@ func main() {
 
 	fmt.Println("[+] ACME Test: [ START ]")
 	log.Println("ACME Test Start")
-	stdout, stderr, err = acmeTest(maindomain, domains, ADMINEMAIL, PYTHON, SHELL)
+	stdout, stderr, err = acmeTest(maindomain, domains, ADMINEMAIL, CONFIG_DIR, PYTHON, SHELL)
 	log.Println(stdout)
 	if err != nil {
 		fmt.Println("[-] ACME Test: [ FAILED ]: " + stderr + " " + err.Error())
@@ -261,7 +264,7 @@ func main() {
 
 	fmt.Println("[+] ACME Run: [ START ]")
 	log.Println("ACME Run Start")
-	stdout, stderr, err = acmeRun(maindomain, domains, ADMINEMAIL, PYTHON, SHELL)
+	stdout, stderr, err = acmeRun(maindomain, domains, ADMINEMAIL, CONFIG_DIR, PYTHON, SHELL)
 	log.Println(stdout)
 	if err != nil {
 		fmt.Println("[-] ACME Run: [ FAILED ]: " + stderr + " " + err.Error())
