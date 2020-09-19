@@ -15,9 +15,18 @@ USERNAME = os.getenv('NICUSER')
 PASSWORD = os.getenv('NICPASS')
 CLIENT_ID = os.getenv('NICID')
 CLIENT_SECRET = os.getenv('NICSECRET')
-TOKEN_FILE = config.get('GENERAL', 'TOKEN_FILE')
-SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
-LOG_FILE = config.get('GENERAL', 'LOG_FILE')
+try:
+	TOKEN_FILE = config.get('GENERAL', 'TOKEN_FILE')
+except Exception:
+	TOKEN_FILE = "nic_token.json"
+try:
+	SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
+except Exception:
+	sys.exit("Error: clean.py - SERVICE_ID not set")
+try:
+	LOG_FILE = config.get('GENERAL', 'LOG_FILE')
+except Exception:
+	LOG_FILE = "letsencrypt-nic.log"
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 
 logging.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(message)s', level = logging.ERROR, filename = LOG_FILE)
