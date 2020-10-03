@@ -16,11 +16,26 @@ USERNAME = os.getenv('NICUSER')
 PASSWORD = os.getenv('NICPASS')
 CLIENT_ID = os.getenv('NICID')
 CLIENT_SECRET = os.getenv('NICSECRET')
-TOKEN_FILE = config.get('GENERAL', 'TOKEN_FILE')
-SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
-LOG_FILE = config.get('GENERAL', 'LOG_FILE')
-TTL = config.get('GENERAL', 'TTL')
-SLEEP = int(config.get('GENERAL', 'SLEEP'))
+try:
+	TOKEN_FILE = config.get('GENERAL', 'TOKEN_FILE')
+except Exception:
+	TOKEN_FILE = "nic_token.json"
+try:
+	SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
+except Excption:
+	sys.exit("auth.py - SERVICE_ID not set")
+try:
+	LOG_FILE = config.get('GENERAL', 'LOG_FILE')
+except Exception:
+	LOG_FILE = "letsencrypt-nic.log"
+try:
+	TTL = config.get('GENERAL', 'TTL')
+except Exception:
+	TTL = 10
+try:
+	SLEEP = int(config.get('GENERAL', 'SLEEP'))
+except Exception:
+	SLEEP = 60
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 CERTBOT_VALIDATION = os.getenv('CERTBOT_VALIDATION')
 
