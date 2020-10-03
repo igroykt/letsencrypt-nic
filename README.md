@@ -21,13 +21,11 @@ rm auth.py clean.py main.go
 Путь к интерпретатору Python требуется, чтобы запускать бинарные файлы. Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register. SERVICE_ID можно найти в личном кабинете в разделе "Услуги/DNS-хостинг" в столбце "Услуга".
 
 [GENERAL]
-* TOKEN_FILE -> файл, в котором будет хранится access token					(default: nic_token.json)
 * SERVICE_ID -> идентификатор услуги								(default: none)
 * ZONE -> список доменных зон (разделенные запятыми)						(default: none)
 * ADMIN_EMAIL -> адрес email админа, который надо указывать для certbot				(default: none)
 * TTL -> время жизни TXT записи									(default: 10)
 * SLEEP -> время ожидания пока TXT запись подхватится публичными DNS серверами			(default: 60)
-* LOG_FILE -> файл, в который будет записываться все происходящее во время работы приложения	(default: letsencrypt-nic.log)
 * OS_SHELL -> shell операционной системы							(default: /bin/bash)
 * LE_CONFIG_DIR -> путь к директории хранения конфигов и сертификатов letsencrypt		(default: /etc/letsencrypt)
 
