@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"encoding/base64"
+	"path/filepath"
+	"flag"
 
 	"gopkg.in/ini.v1"
 )
@@ -108,7 +110,7 @@ func acmeTest(maindomain string, domains string, adminemail string, config_dir s
 	var out string
 	var errout string
 	var err error
-	dir, err := os.Getwd()
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		return out, errout, err
 	}
@@ -120,7 +122,7 @@ func acmeRun(maindomain string, domains string, adminemail string, config_dir st
 	var out string
 	var errout string
 	var err error
-	dir, err := os.Getwd()
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		return out, errout, err
 	}
@@ -164,14 +166,18 @@ func main() {
 	var err error
 	var stdout string
 	var stderr string
-	var argument string
 
-	if len(os.Args) > 1 {
-		argument = os.Args[1]
-	}
+	testPtr := flag.Bool("t", false, "test and exit")
+	verbPtr := flag.Bool("v", false, "verbose mode")
+	flag.Parse()
 
 	// Read config
-	cfg, err := ini.Load("config.ini")
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		fmt.Println("Error: " + err.Error())
+		os.Exit(1)
+	}
+	cfg, err := ini.Load(dir + "/config.ini")
 	if err != nil {
 		fmt.Println("Error: " + err.Error())
 		os.Exit(1)
@@ -179,62 +185,38 @@ func main() {
 
 	// Set config
 	ZONE := cfg.Section("GENERAL").Key("ZONE").Strings(",")
-	if len(ZONE) == 0 {
-		fmt.Println("Error: ZONE not set")
-		os.Exit(1)
-	}
 	ADMINEMAIL := cfg.Section("GENERAL").Key("ADMIN_EMAIL").String()
-	if len(ADMINEMAIL) == 0 {
-		fmt.Println("Error: ADMINEMAIL not set")
-		os.Exit(1)
-	}
-	LOGFILE := cfg.Section("GENERAL").Key("LOG_FILE").In("letsencrypt-nic.log", []string{"str", "arr", "types"})
-	PYTHON := cfg.Section("GENERAL").Key("PYTHON").In("/usr/bin/python3", []string{"str", "arr", "types"})
-	SHELL := cfg.Section("GENERAL").Key("OS_SHELL").In("/bin/bash", []string{"str", "arr", "types"})
-	CONFIG_DIR := cfg.Section("GENERAL").Key("LE_CONFIG_DIR").In("/etc/letsencrypt", []string{"str", "arr", "types"})
-	WEBSERVERENABLED := cfg.Section("WEBSERVER").Key("ENABLED").MustBool(false)
-	TESTCONFIG := cfg.Section("WEBSERVER").Key("TEST_CONFIG").In("/usr/sbin/nginx -t", []string{"str", "arr", "types"})
-	RELOADCONFIG := cfg.Section("WEBSERVER").Key("RELOAD_CONFIG").In("/usr/sbin/nginx -s reload", []string{"str", "arr", "types"})
-	SMTPENABLED := cfg.Section("SMTP").Key("ENABLED").MustBool(false)
-	SMTPSERVER := cfg.Section("SMTP").Key("SERVER").In("127.0.0.1", []string{"str", "arr", "types"})
-	SMTPPORT := cfg.Section("SMTP").Key("PORT").MustInt(25)
+	LOGFILE := "main.log"
+	PYTHON := cfg.Section("GENERAL").Key("PYTHON").String()
+	SHELL := cfg.Section("GENERAL").Key("OS_SHELL").String()
+	CONFIG_DIR := cfg.Section("GENERAL").Key("LE_CONFIG_DIR").String()
+	WEBSERVERENABLED := cfg.Section("WEBSERVER").Key("ENABLED").MustBool()
+	TESTCONFIG := cfg.Section("WEBSERVER").Key("TEST_CONFIG").String()
+	RELOADCONFIG := cfg.Section("WEBSERVER").Key("RELOAD_CONFIG").String()
+	SMTPENABLED := cfg.Section("SMTP").Key("ENABLED").MustBool()
+	SMTPSERVER := cfg.Section("SMTP").Key("SERVER").String()
+	SMTPPORT := cfg.Section("SMTP").Key("PORT").MustInt()
 	SMTPUSER := cfg.Section("SMTP").Key("USERNAME").String()
 	SMTPPASS := cfg.Section("SMTP").Key("PASSWORD").String()
 	SENDER := cfg.Section("SMTP").Key("FROM").String()
-	if SMTPENABLED && len(SENDER) == 0 {
-		fmt.Println("Error: SENDER not set")
-		os.Exit(1)
-	}
 	RECIPIENT := cfg.Section("SMTP").Key("TO").Strings(",")
-	if SMTPENABLED && len(RECIPIENT) == 0 {
-		fmt.Println("Error: RECIPIENT not set")
-		os.Exit(1)
-	}
-        POSTHOOKENABLED := cfg.Section("POSTHOOK").Key("ENABLED").MustBool(false)
+        POSTHOOKENABLED := cfg.Section("POSTHOOK").Key("ENABLED").MustBool()
         POSTHOOKSCRIPT := cfg.Section("POSTHOOK").Key("SCRIPT").String()
-	if POSTHOOKENABLED && len(POSTHOOKSCRIPT) == 0 {
-		fmt.Println("Error: POSTHOOKSCRIPT not set")
-		os.Exit(1)
-	}
 	HOSTNAME, err := os.Hostname()
-	/*_ = TESTCONFIG
-	_ = RELOADCONFIG
-	_ = SMTPENABLED
-	_ = SMTPSERVER
-	_ = SMTPPORT
-	_ = SMTPUSER
-	_ = SMTPPASS
-	_ = SENDER
-	_ = RECIPIENT
-	_ = HOSTNAME*/
+
 	if err != nil {
 		fmt.Println("Error: " + err.Error())
 		os.Exit(1)
 	}
 
 	// Set logging
+	slashCount := strings.Count(LOGFILE, "/")
+	if slashCount == 0 {
+		LOGFILE = dir + "/" + LOGFILE
+	}
 	if fileExists(LOGFILE) {
-		os.Remove(LOGFILE)
+		out := os.Remove(LOGFILE)
+		_ = out
 	}
 	logfile, err := os.OpenFile(LOGFILE, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -244,20 +226,30 @@ func main() {
 	defer logfile.Close()
 	log.SetOutput(logfile)
 
-	fmt.Println("-= LetsEncrypt NIC =-")
+	if *verbPtr {
+		fmt.Println("-= LetsEncrypt NIC =-")
+	}
+	log.Println("-= LetsEncrypt NIC =-")
 
 	exportCredentials()
 
-	fmt.Println("Preparing a domain list...")
+	if *verbPtr {
+		fmt.Println("Preparing domain list...")
+	}
+	log.Println("Preparing domain list...")
 	maindomain := ZONE[0]
 	domains := makeList(ZONE)
 
-	fmt.Println("[+] ACME Test: [ START ]")
+	if *verbPtr {
+		fmt.Println("[+] ACME Test: [ START ]")
+	}
 	log.Println("ACME Test Start")
 	stdout, stderr, err = acmeTest(maindomain, domains, ADMINEMAIL, CONFIG_DIR, PYTHON, SHELL)
 	log.Println(stdout)
 	if err != nil {
-		fmt.Println("[-] ACME Test: [ FAILED ]: " + stderr + " " + err.Error())
+		if *verbPtr {
+			fmt.Println("[-] ACME Test: [ FAILED ]: " + stderr + " " + err.Error())
+		}
 		log.Println("ACME Test Failed: " + stderr + " " + err.Error())
 		if SMTPENABLED {
 			subject := "[" + HOSTNAME + "] ACME Test: [ FAILED ]"
@@ -267,26 +259,37 @@ func main() {
 				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 			}
 			if err != nil {
-				fmt.Println("SMTP server error: " + err.Error())
+				if *verbPtr {
+					fmt.Println("SMTP server error: " + err.Error())
+				}
 				log.Println("SMTP server error: " + err.Error())
 			}
 		}
 		os.Exit(1)
 	}
-	fmt.Println("[+] ACME Test: [ DONE ]")
+	if *verbPtr {
+		fmt.Println("[+] ACME Test: [ DONE ]")
+	}
 	log.Println("ACME Test Done")
-	if argument == "-t" {
+	if *testPtr {
 		destroyCredentials()
-		fmt.Println("-= Program completed! =-")
+		if *verbPtr {
+			fmt.Println("-= Program completed! =-")
+		}
+		log.Println("-= Program completed! =-")
 		os.Exit(0)
 	}
 
-	fmt.Println("[+] ACME Run: [ START ]")
+	if *verbPtr {
+		fmt.Println("[+] ACME Run: [ START ]")
+	}
 	log.Println("ACME Run Start")
 	stdout, stderr, err = acmeRun(maindomain, domains, ADMINEMAIL, CONFIG_DIR, PYTHON, SHELL)
 	log.Println(stdout)
 	if err != nil {
-		fmt.Println("[-] ACME Run: [ FAILED ]: " + stderr + " " + err.Error())
+		if *verbPtr {
+			fmt.Println("[-] ACME Run: [ FAILED ]: " + stderr + " " + err.Error())
+		}
 		log.Println("ACME Run Failed: " + stderr + " " + err.Error())
 		if SMTPENABLED {
 			subject := "[" + HOSTNAME + "] ACME Run: [ FAILED ]"
@@ -296,22 +299,30 @@ func main() {
 				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 			}
 			if err != nil {
-				fmt.Println("SMTP server error: " + err.Error())
+				if *verbPtr {
+					fmt.Println("SMTP server error: " + err.Error())
+				}
 				log.Println("SMTP server error: " + err.Error())
 			}
 		}
 		os.Exit(1)
 	}
-	fmt.Println("[+] ACME Run: [ DONE ]")
+	if *verbPtr {
+		fmt.Println("[+] ACME Run: [ DONE ]")
+	}
 	log.Println("ACME Run Done")
 
 	if WEBSERVERENABLED {
-		fmt.Println("[+] SERVER Reload: [ START ]")
+		if *verbPtr {
+			fmt.Println("[+] SERVER Reload: [ START ]")
+		}
 		log.Println("SERVER Reload Start")
 		stdout, stderr, err = reloadServer(TESTCONFIG, RELOADCONFIG, SHELL)
 		log.Println(stdout)
 		if err != nil {
-			fmt.Println("[-] SERVER Reload: [ FAILED ]: " + stderr + " " + err.Error())
+			if *verbPtr {
+				fmt.Println("[-] SERVER Reload: [ FAILED ]: " + stderr + " " + err.Error())
+			}
 			log.Println("SERVER Reload Failed: " + stderr + " " + err.Error())
 			if SMTPENABLED {
 				subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
@@ -321,43 +332,57 @@ func main() {
 					err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 				}
 				if err != nil {
-					fmt.Println("SMTP server error: " + err.Error())
+					if *verbPtr {
+						fmt.Println("SMTP server error: " + err.Error())
+					}
 					log.Println("SMTP server error: " + err.Error())
 				}
 			}
 			os.Exit(1)
 		}
-		fmt.Println("[+] SERVER Reload: [ DONE ]")
+		if *verbPtr {
+			fmt.Println("[+] SERVER Reload: [ DONE ]")
+		}
 		log.Println("SERVER Reload Done")
 	}
 
 	destroyCredentials()
 
         if POSTHOOKENABLED {
-		fmt.Println("[+] POSTHOOK Script: [ START ]")
-		log.Println("POSTHOOK Script Start")
+		if *verbPtr {
+			fmt.Println("[+] POST HOOK Run: [ START]")
+		}
 		stdout, stderr, err = call(POSTHOOKSCRIPT, SHELL)
 		log.Println(stdout)
 		if err != nil {
-			fmt.Println("[-] POSTHOOK Script: [ FAILED ]: " + stderr + " " + err.Error())
-			log.Println("POSTHOOK Script Failed: " + stderr + " " + err.Error())
+			if *verbPtr {
+				fmt.Println("[-] POST HOOK Run: [ FAILED ]: " + stderr + " " + err.Error())
+			}
+			log.Println("POST HOOK Run Failed: " + stderr + " " + err.Error())
 			if SMTPENABLED {
-				subject := "[" + HOSTNAME + "] POSTHOOK Script: [ FAILED ]"
+				subject := "[" + HOSTNAME + "] SERVER Reload: [ FAILED ]"
 				if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
 					err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 				} else {
 					err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
 				}
 				if err != nil {
-					fmt.Println("SMTP server error: " + err.Error())
+					if *verbPtr {
+						fmt.Println("SMTP server error: " + err.Error())
+					}
 					log.Println("SMTP server error: " + err.Error())
 				}
 			}
 			os.Exit(1)
 		}
-		fmt.Println("[+] POSTHOOK Script: [ DONE ]")
-		log.Println("POSTHOOK Script Done")
+		if *verbPtr {
+			fmt.Println("[+] POST HOOK Run: [ DONE ]")
+		}
+		log.Println("POST HOOK Run Done")
 	}
 
-	fmt.Println("-= Program completed! =-")
+	if *verbPtr {
+		fmt.Println("-= Program completed! =-")
+	}
+	log.Println("-= Program completed! =-")
 }
