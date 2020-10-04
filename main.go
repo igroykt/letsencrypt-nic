@@ -12,6 +12,7 @@ import (
 	"encoding/base64"
 	"path/filepath"
 	"flag"
+	"syscall"
 
 	"gopkg.in/ini.v1"
 )
@@ -38,6 +39,9 @@ func call(cmd string, shell string) (string, string, error) {
 	out := exec.Command(shell, "-c", cmd)
 	out.Stdout = &stdout
 	out.Stderr = &stderr
+	out.SysProcAttr = &syscall.SysProcAttr {
+		Setpgid: true,
+	}
 	err := out.Run()
 	return stdout.String(), stderr.String(), err
 }
@@ -80,7 +84,7 @@ func sendmailNoAuth(server string, port int, from string, to []string, subject s
         msg := "To: " + strings.Join(to, ",") + "\r\n" +
                 "From: " + from + "\r\n" +
                 "Subject: " + subject + "\r\n" +
-                "Content-Type: text/html; charset=\"UTF-8\"\r\n" +
+                "Content-Type: text/plain; charset=\"UTF-8\"\r\n" +
                 "Content-Transfer-Encoding: base64\r\n" +
                 "\r\n" + base64.StdEncoding.EncodeToString([]byte(message))
 
@@ -169,6 +173,7 @@ func main() {
 
 	testPtr := flag.Bool("t", false, "test and exit")
 	verbPtr := flag.Bool("v", false, "verbose mode")
+	cleanPtr := flag.Bool("cleanall", false, "remove all DNS challenges (TXT records)")
 	flag.Parse()
 
 	// Read config
@@ -210,10 +215,7 @@ func main() {
 	}
 
 	// Set logging
-	slashCount := strings.Count(LOGFILE, "/")
-	if slashCount == 0 {
-		LOGFILE = dir + "/" + LOGFILE
-	}
+	LOGFILE = dir + "/" + LOGFILE
 	if fileExists(LOGFILE) {
 		out := os.Remove(LOGFILE)
 		_ = out
@@ -239,6 +241,31 @@ func main() {
 	log.Println("Preparing domain list...")
 	maindomain := ZONE[0]
 	domains := makeList(ZONE)
+
+        if *cleanPtr {
+                if *verbPtr {
+                        fmt.Println("[+] DNS Clean All Challenges: [ START ]")
+                }
+                log.Println("DNS Clean All Challenges Start")
+                os.Setenv("CERTBOT_DOMAIN", maindomain)
+                stdout, stderr, err = call(PYTHON+" "+dir+"/clean_all.pyc", SHELL)
+                log.Println(stdout)
+                if err != nil {
+                        if *verbPtr {
+                                fmt.Println("[-] DNS Clean All Challenges: [FAILED]: " + stderr + " " + err.Error())
+                        }
+                        log.Println("DNS Clean All Challenges Failed: " + stderr + " " + err.Error())
+                }
+                if *verbPtr {
+                        fmt.Println("[+] DNS Clean All Challenges: [ DONE ]")
+                        fmt.Println("-= Program completed! =-")
+                }
+                os.Unsetenv("CERTBOT_DOMAIN")
+		destroyCredentials()
+                log.Println("DNS Clean All Challanges Done")
+                log.Println("-= Program completed! =-")
+                os.Exit(0)
+        }
 
 	if *verbPtr {
 		fmt.Println("[+] ACME Test: [ START ]")
