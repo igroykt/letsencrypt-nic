@@ -72,7 +72,6 @@ except Exception as err:
     records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
 
 def findTXTID(data):
-    ids = []
     for record in data:
         # skip all records except TXT
         if type(record) is TXTRecord:
@@ -82,17 +81,15 @@ def findTXTID(data):
             record = eval(record)
             if "_acme-challenge" in record['name']:
                 #return record['id']
-                ids.append(record['id'])
-    return ids
+                return record['id']
 
 try:
-    records_id = findTXTID(records)
+    record_id = findTXTID(records)
 except Exception as err:
     logging.error(f"findTXTID error: {err}")
 
 try:
-    for id in records_id:
-        api.delete_record(id, SERVICE_ID, CERTBOT_DOMAIN)
+    api.delete_record(record_id, SERVICE_ID, CERTBOT_DOMAIN)
 except Exception as err:
     logging.error(f"api.delete error: {err}")
 
