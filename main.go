@@ -110,6 +110,15 @@ func makeList(zone []string) string {
 	return data
 }
 
+func makeMainDomain(zone string) string {
+        wildcard := strings.Count(zone, "*")
+        if wildcard > 0 {
+                zone = strings.Replace(zone, "*.", "", -1)
+                return zone
+        }
+        return zone
+}
+
 func acmeTest(maindomain string, domains string, adminemail string, config_dir string, python string, SHELL string) (string, string, error) {
 	var out string
 	var errout string
@@ -239,7 +248,7 @@ func main() {
 		fmt.Println("Preparing domain list...")
 	}
 	log.Println("Preparing domain list...")
-	maindomain := ZONE[0]
+	maindomain := makeMainDomain(ZONE[0])
 	domains := makeList(ZONE)
 
         if *cleanPtr {
