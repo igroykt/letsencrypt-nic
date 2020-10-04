@@ -21,31 +21,43 @@ rm auth.py clean.py main.go
 Путь к интерпретатору Python требуется, чтобы запускать бинарные файлы. Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register. SERVICE_ID можно найти в личном кабинете в разделе "Услуги/DNS-хостинг" в столбце "Услуга".
 
 [GENERAL]
-* SERVICE_ID -> идентификатор услуги								(default: none)
-* ZONE -> список доменных зон (разделенные запятыми)						(default: none)
-* ADMIN_EMAIL -> адрес email админа, который надо указывать для certbot				(default: none)
-* TTL -> время жизни TXT записи									(default: 10)
-* SLEEP -> время ожидания пока TXT запись подхватится публичными DNS серверами			(default: 60)
-* OS_SHELL -> shell операционной системы							(default: /bin/bash)
-* LE_CONFIG_DIR -> путь к директории хранения конфигов и сертификатов letsencrypt		(default: /etc/letsencrypt)
+
+| Function      | Description                                                            | Default value    |
+|---------------|------------------------------------------------------------------------|------------------|
+| SERVICE_ID    | Идентификатор услуги                                                   | None             |
+| ZONE          | Список доменных зон (разделенных запятыми)                             | None             |
+| ADMIN_EMAIL   | E-mail администратора certbot                                          | None             |
+| TTL           | Время жизни TXT записей                                                | 10               |
+| SLEEP         | Время ожидания пока TXT запись подхватится публичными DNS серверами    | 120              |
+| OS_SHELL      | Shell операционной системы                                             | /bin/bash        |
+| LE_CONFIG_DIR | Путь к директории для хранения конфигураций и сертификатов LetsEncrypt | /etc/letsencrypt |
 
 [WEBSERVER]
-* ENABLED -> флаг для проверки включена ли опция						(default: false)
-* TEST_CONFIG -> команда для проверки конфигурации веб-сервера					(default: /usr/sbin/nginx -t)
-* RELOAD_CONFIG -> команда для перезапуска веб-сервера						(default: /usr/sbin/nginx -s reload)
+
+| Function      | Description                                   | Default value             |
+|---------------|-----------------------------------------------|---------------------------|
+| ENABLED       | Флаг активации опции                          | false                     |
+| TEST_CONFIG   | Команда тестирования конфигуарции веб-сервера | /usr/sbin/nginx -t        |
+| RELOAD_CONFIG | Команда перезапуска веб-сервера               | /usr/sbin/nginx -s reload |
 
 [SMTP]
-* ENABLED -> флаг для проверки включена ли опция						(default: false)
-* SERVER -> адрес сервера									(default: 127.0.0.1)
-* PORT -> порт сервера										(default: 25)
-* USERNAME -> имя пользователя									(default: none)
-* PASSWORD -> пароль пользователя								(default: none)
-* FROM -> адрес почты от имени которого будет отправлена почта					(default: none)
-* TO -> адресат, которому должно уйти письмо							(default: none)
+
+| Function | Description                      | Default value |
+|----------|----------------------------------|---------------|
+| ENABLED  | Флаг активации опции             | false         |
+| SERVER   | Адрес сервера                    | 127.0.0.1     |
+| PORT     | Порт сервера                     | 25            |
+| USERNAME | Логин                            | None          |
+| PASSWORD | Пароль                           | None          |
+| FROM     | Исходящий адрес почты            | None          |
+| TO       | Реципиент (разделенные запятыми) | None          |
 
 [POSTHOOK]
-* ENABLED -> флаг для провеки включена ли опция							(default: false)
-* SCRIPT -> путь до исполняемого скрипта							(default: none)
+
+| Function | Description                  | Default value |
+|----------|------------------------------|---------------|
+| ENABLED  | Флаг активации опции         | false         |
+| SCRIPT   | Путь до исполняемого скрипта | None          |
 
 USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section". Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
 
@@ -64,8 +76,15 @@ POSTHOOK позволяет в конце запустить ваш скрипт
 ## Тест
 Тестирование производится при каждом выписывании сертификатов, но также можно запустить тест вручную:
 ```
-./main -t
+./main -v -t
 ```
+
+## Очистка TXT
+Если надо удалить большое количество DNS challenge, то можно сделать следующее:
+```
+./main -v -cleanall
+```
+Эта операция удалит все TXT записи типа _acme-challenge.
 
 ## Cron
 ```
