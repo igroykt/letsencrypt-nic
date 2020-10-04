@@ -20,7 +20,7 @@ rm auth.py clean.py main.go
 ## Настройка
 Путь к интерпретатору Python требуется, чтобы запускать бинарные файлы. Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register. SERVICE_ID можно найти в личном кабинете в разделе "Услуги/DNS-хостинг" в столбце "Услуга".
 
-[GENERAL]
+**[GENERAL]**
 
 | Function      | Description                                                            | Default value    |
 |---------------|------------------------------------------------------------------------|------------------|
@@ -32,7 +32,7 @@ rm auth.py clean.py main.go
 | OS_SHELL      | Shell операционной системы                                             | /bin/bash        |
 | LE_CONFIG_DIR | Путь к директории для хранения конфигураций и сертификатов LetsEncrypt | /etc/letsencrypt |
 
-[WEBSERVER]
+**[WEBSERVER]**
 
 | Function      | Description                                   | Default value             |
 |---------------|-----------------------------------------------|---------------------------|
@@ -40,7 +40,7 @@ rm auth.py clean.py main.go
 | TEST_CONFIG   | Команда тестирования конфигуарции веб-сервера | /usr/sbin/nginx -t        |
 | RELOAD_CONFIG | Команда перезапуска веб-сервера               | /usr/sbin/nginx -s reload |
 
-[SMTP]
+**[SMTP]**
 
 | Function | Description                      | Default value |
 |----------|----------------------------------|---------------|
@@ -52,7 +52,7 @@ rm auth.py clean.py main.go
 | FROM     | Исходящий адрес почты            | None          |
 | TO       | Реципиент (разделенные запятыми) | None          |
 
-[POSTHOOK]
+**[POSTHOOK]**
 
 | Function | Description                  | Default value |
 |----------|------------------------------|---------------|
