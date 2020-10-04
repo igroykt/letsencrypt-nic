@@ -14,11 +14,15 @@ go get gopkg.in/ini.v1
 mv config.sample.ini config.ini
 # подправить config.ini
 ./compile.py
-rm auth.py clean.py main.go
+rm -f auth.py clean.py clean_all.py main.go
 ```
 
 ## Настройка
-Путь к интерпретатору Python требуется, чтобы запускать бинарные файлы. Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register. SERVICE_ID можно найти в личном кабинете в разделе "Услуги/DNS-хостинг" в столбце "Услуга".
+Путь к интерпретатору Python требуется, чтобы запускать бинарные файлы.
+
+Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register.
+
+SERVICE_ID можно найти в личном кабинете в разделе "Услуги/DNS-хостинг" в столбце "Услуга".
 
 **[GENERAL]**
 
@@ -61,7 +65,7 @@ rm auth.py clean.py main.go
 
 USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section". Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
 
-LE_CONFIG_DIR полезен в том случае, когда для некоторых ресурсов надо выписывать сертификаты по http challenge, а некоторые по dns challenge. В таком случае для dns challenge можно указать путь скажем /etc/letsencrypt-dns, тогда будет создана эта директория и аккаунты, конфиги и сертификаты для dns challenge будут храниться там.
+LE_CONFIG_DIR полезен в том случае, когда для некоторых ресурсов надо выписывать сертификаты по http challenge, а некоторые по dns challenge. В таком случае для dns challenge можно указать путь скажем /etc/letsencrypt-dns, тогда будет создана эта директория и аккаунты, конфиги, сертификаты для dns challenge будут храниться там.
 
 Если MTA без аутентификации, то в config.ini оставьте пустыми значения USERNAME и PASSWORD в секции SMTP.
 
