@@ -1,6 +1,6 @@
 # LetsEncrypt NIC
 
-Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API.
+Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API для Linux.
 
 ## Зависимости
 * Python 3.x
