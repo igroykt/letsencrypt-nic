@@ -22,6 +22,7 @@ CLIENT_SECRET = os.getenv('NICSECRET')
 SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
 TTL = config.get('GENERAL', 'TTL')
 SLEEP = int(config.get('GENERAL', 'SLEEP'))
+RETIRES = int(config.get('GENERAL', 'RETRIES'))
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 CERTBOT_VALIDATION = os.getenv('CERTBOT_VALIDATION')
 
@@ -88,10 +89,17 @@ except Exception as err:
 
 resolver = dns.resolver.Resolver(configure = False)
 resolver.nameservers = ['8.8.8.8']
-while True:
+
+n = 1
+while n <= RETRIES:
     try:
         time.sleep(SLEEP)
         resolver.resolve(f'_acme-challenge.{CERTBOT_DOMAIN}', 'txt')
         break
-    except Exception:
+    except Exception as err:
+        logging.error(f"resolver.resolve error: {err}")
+        n += 1
         pass
+else:
+    logging.error("resolver.resolve error: Could not find validation TXT record.")
+    raise Exception("resolver.resolve error: Could not find validation TXT record.")
