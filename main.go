@@ -276,38 +276,38 @@ func main() {
                 os.Exit(0)
         }
 
-	if *verbPtr {
-		fmt.Println("[+] ACME Test: [ START ]")
-	}
-	log.Println("ACME Test Start")
-	stdout, stderr, err = acmeTest(maindomain, domains, ADMINEMAIL, CONFIG_DIR, PYTHON, SHELL)
-	log.Println(stdout)
-	if err != nil {
-		if *verbPtr {
-			fmt.Println("[-] ACME Test: [ FAILED ]: " + stderr + " " + err.Error())
-		}
-		log.Println("ACME Test Failed: " + stderr + " " + err.Error())
-		if SMTPENABLED {
-			subject := "[" + HOSTNAME + "] ACME Test: [ FAILED ]"
-			if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
-				err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
-			} else {
-				err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
-			}
-			if err != nil {
-				if *verbPtr {
-					fmt.Println("SMTP server error: " + err.Error())
-				}
-				log.Println("SMTP server error: " + err.Error())
-			}
-		}
-		os.Exit(1)
-	}
-	if *verbPtr {
-		fmt.Println("[+] ACME Test: [ DONE ]")
-	}
-	log.Println("ACME Test Done")
 	if *testPtr {
+		if *verbPtr {
+			fmt.Println("[+] ACME Test: [ START ]")
+		}
+		log.Println("ACME Test Start")
+		stdout, stderr, err = acmeTest(maindomain, domains, ADMINEMAIL, CONFIG_DIR, PYTHON, SHELL)
+		log.Println(stdout)
+		if err != nil {
+			if *verbPtr {
+				fmt.Println("[-] ACME Test: [ FAILED ]: " + stderr + " " + err.Error())
+			}
+			log.Println("ACME Test Failed: " + stderr + " " + err.Error())
+			if SMTPENABLED {
+				subject := "[" + HOSTNAME + "] ACME Test: [ FAILED ]"
+				if len(SMTPUSER) > 0 && len(SMTPPASS) > 0 {
+					err = sendmail(SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+				} else {
+					err = sendmailNoAuth(SMTPSERVER, SMTPPORT, SENDER, RECIPIENT, subject, stderr+" "+err.Error())
+				}
+				if err != nil {
+					if *verbPtr {
+						fmt.Println("SMTP server error: " + err.Error())
+					}
+					log.Println("SMTP server error: " + err.Error())
+				}
+			}
+			os.Exit(1)
+		}
+		if *verbPtr {
+			fmt.Println("[+] ACME Test: [ DONE ]")
+		}
+		log.Println("ACME Test Done")
 		destroyCredentials()
 		if *verbPtr {
 			fmt.Println("-= Program completed! =-")
