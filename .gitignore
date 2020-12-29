@@ -131,3 +131,4 @@ dmypy.json
 config.ini
 letsencrypt-nic.log
 nic_token.json
+test.py
