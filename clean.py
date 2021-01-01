@@ -59,6 +59,20 @@ except Exception as err:
 	token_filename = TOKEN_FILE
     )
 
+def mainDomainTail(domain):
+    domain = domain.split(".")
+    domain = domain[len(domain)-2:]
+    tmp = []
+    for level in domain:
+        if "*" not in level:
+            tmp.append(level)
+    domain = '.'.join(tmp)
+    if domain:
+        return domain
+    return False
+
+CERTBOT_DOMAIN = mainDomainTail(CERTBOT_DOMAIN)
+
 try:
     records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
 except Exception as err:
