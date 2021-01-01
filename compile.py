@@ -26,12 +26,6 @@ cleanbin = list2str(cleanbin)
 shutil.move(cleanbin, './clean.pyc')
 os.system('chmod +x ./clean.pyc')
 
-py_compile.compile('clean_all.py')
-cleanbin = glob.glob('./__pycache__/*.pyc')
-cleanbin = list2str(cleanbin)
-shutil.move(cleanbin, './clean_all.pyc')
-os.system('chmod +x ./clean_all.pyc')
-
 if os.path.isdir('./__pycache__'):
         shutil.rmtree('./__pycache__')
 
