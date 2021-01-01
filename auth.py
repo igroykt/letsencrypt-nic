@@ -148,9 +148,10 @@ def genDnsList(dns_list):
     return new_dns_list
 
 def resolveDomain(dns_list):
-    time.sleep(120)
+    time.sleep(SLEEP)
     resolver = dns.resolver.Resolver(configure = False)
     i = 1
+    dns_size = len(dns_list)
     for server in dns_list:
         resolver.nameservers = [server]
         try:
