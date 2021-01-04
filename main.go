@@ -127,7 +127,7 @@ func acmeTest(maindomain string, domains string, adminemail string, config_dir s
 	if err != nil {
 		return out, errout, err
 	}
-	out, errout, err = call("/usr/bin/certbot certonly --config-dir "+config_dir+" --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --dry-run --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
+	out, errout, err = call("/usr/bin/certbot certonly --config-dir "+config_dir+" --agree-to --email "+adminemail+" --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --dry-run --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
 	return out, errout, err
 }
 
@@ -139,7 +139,7 @@ func acmeRun(maindomain string, domains string, adminemail string, config_dir st
 	if err != nil {
 		return out, errout, err
 	}
-	out, errout, err = call("/usr/bin/certbot certonly --config-dir "+config_dir+" --agree-to --email "+adminemail+" --expand --manual-public-ip-logging-ok --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
+	out, errout, err = call("/usr/bin/certbot certonly --config-dir "+config_dir+" --agree-to --email "+adminemail+" --cert-name "+maindomain+" --manual --renew-by-default --preferred-challenges dns --manual-auth-hook '"+python+" "+dir+"/auth.pyc' --manual-cleanup-hook '"+python+" "+dir+"/clean.pyc' "+domains, SHELL)
 	return out, errout, err
 }
 
