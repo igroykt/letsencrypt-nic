@@ -215,8 +215,8 @@ func main() {
 	SMTPPASS := cfg.Section("SMTP").Key("PASSWORD").String()
 	SENDER := cfg.Section("SMTP").Key("FROM").String()
 	RECIPIENT := cfg.Section("SMTP").Key("TO").Strings(",")
-        POSTHOOKENABLED := cfg.Section("POSTHOOK").Key("ENABLED").MustBool()
-        POSTHOOKSCRIPT := cfg.Section("POSTHOOK").Key("SCRIPT").String()
+    POSTHOOKENABLED := cfg.Section("POSTHOOK").Key("ENABLED").MustBool()
+    POSTHOOKSCRIPT := cfg.Section("POSTHOOK").Key("SCRIPT").String()
 	HOSTNAME, err := os.Hostname()
 
 	if err != nil {
