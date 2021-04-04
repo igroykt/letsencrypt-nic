@@ -317,6 +317,9 @@ try:
             domain_tail = domain_tail[1:]
             domain_tail = '.'.join(domain_tail)
             record = TXTRecord(name = f"_acme-challenge.{domain_tail}", txt = CERTBOT_VALIDATION, ttl = TTL)
+        else:
+            domain_tail = domainTail(CERTBOT_DOMAIN)
+            record = TXTRecord(name = f"_acme-challenge.{domain_tail}", txt = CERTBOT_VALIDATION, ttl = TTL)
     else:
         record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
 except Exception as err:
@@ -333,6 +336,9 @@ except Exception as err:
             domain_tail = domain_tail[1:]
             domain_tail = '.'.join(domain_tail)
             record = TXTRecord(name = f"_acme-challenge.{domain_tail}", txt = CERTBOT_VALIDATION, ttl = TTL)
+        else:
+            domain_tail = domainTail(CERTBOT_DOMAIN)
+            record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
     else:
         record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
 
