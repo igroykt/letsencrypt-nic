@@ -319,7 +319,10 @@ try:
             record = TXTRecord(name = f"_acme-challenge.{domain_tail}", txt = CERTBOT_VALIDATION, ttl = TTL)
         else:
             domain_tail = domainTail(CERTBOT_DOMAIN)
-            record = TXTRecord(name = f"_acme-challenge.{domain_tail}", txt = CERTBOT_VALIDATION, ttl = TTL)
+            if domain_tail:
+                record = TXTRecord(name = f"_acme-challenge.{domain_tail}", txt = CERTBOT_VALIDATION, ttl = TTL)
+            else:
+                record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
     else:
         record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
 except Exception as err:
@@ -332,38 +335,30 @@ except Exception as err:
     )
     if len(CERTBOT_DOMAIN.split(".")) > 2:
         if tld:
+            main_domain = mainDomainTail(CERTBOT_DOMAIN)
             domain_tail = domain_object.subdomain.split(".")
             domain_tail = domain_tail[1:]
             domain_tail = '.'.join(domain_tail)
             record = TXTRecord(name = f"_acme-challenge.{domain_tail}", txt = CERTBOT_VALIDATION, ttl = TTL)
         else:
             domain_tail = domainTail(CERTBOT_DOMAIN)
-            record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
+            if domain_tail:
+                record = TXTRecord(name = f"_acme-challenge.{domain_tail}", txt = CERTBOT_VALIDATION, ttl = TTL)
+            else:
+                record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
     else:
+        main_domain = CERTBOT_DOMAIN
         record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
 
 try:
-    if len(CERTBOT_DOMAIN.split(".")) > 2:
-        main_domain = mainDomainTail(CERTBOT_DOMAIN)
-        api.add_record(record, SERVICE_ID, main_domain)
-    else:
-        api.add_record(record, SERVICE_ID, CERTBOT_DOMAIN)
+    api.add_record(record, SERVICE_ID, main_domain)
 except Exception as err:
     logging.error(f"api.add_record error: {err}")
 
 try:
-    if len(CERTBOT_DOMAIN.split(".")) > 2:
-        main_domain = mainDomainTail(CERTBOT_DOMAIN)
-        api.commit(SERVICE_ID, main_domain)
-    else:
-        api.commit(SERVICE_ID, CERTBOT_DOMAIN)
+    api.commit(SERVICE_ID, main_domain)
 except Exception as err:
     logging.error(f"api.commit error: {err}")
-
-if len(CERTBOT_DOMAIN.split(".")) > 2:
-    main_domain = mainDomainTail(CERTBOT_DOMAIN)
-else:
-    main_domain = CERTBOT_DOMAIN
 
 dns_list = getDnsList(main_domain)
 dns_ip_list = genDnsList(dns_list)
