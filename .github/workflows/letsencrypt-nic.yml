@@ -13,16 +13,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.9
+    - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
     - name: Install Python dependencies
       run: |
         pip3 install -r requirements.txt
-    - name: Install Go
-      run: |
-        apt install golang -y
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.16
     - name: Setup Go
       run: |
         go env -w GO111MODULE=auto
