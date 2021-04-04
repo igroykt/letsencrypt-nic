@@ -1,2 +1,3 @@
 nic-api
 dnspython>=2.0.0
+tld
