@@ -1,3 +1,7 @@
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/igroykt/letsencrypt-nic/letsencrypt-nic%20build)
+![GitHub](https://img.shields.io/github/license/igroykt/letsencrypt-nic)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/igroykt/letsencrypt-nic)
+
 # LetsEncrypt NIC
 
 Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API для Linux.
