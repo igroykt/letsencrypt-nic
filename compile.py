@@ -35,4 +35,4 @@ try:
 except Exception as e:
 	sys.exit(f'Compile error: {e}')
 
-sys.exit('Compile completed!')
+print('Compile completed!')
