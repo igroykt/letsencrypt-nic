@@ -1,0 +1,34 @@
+name: letsencrypt-nic build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install Python dependencies
+      run: |
+        pip install -r requirements.txt
+    - name: Install Go
+      run: |
+        apt install golang -y
+    - name: Setup Go
+      run: |
+        go env -w GO111MODULE=auto
+    - name: Install Go dependencies
+      run: |
+        go get gopkg.in/ini.v1
+    - name: Compile...
+      run: |
+        python compile.py
