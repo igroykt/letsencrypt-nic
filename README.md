@@ -7,14 +7,15 @@
 Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API для Linux.
 
 ## Зависимости
-* Python 3.x
-* Golang 1.x
-* Certbot 1.x
+* Python 3.8
+* Golang 1.16
+* Certbot 1.13
 
 ## Установка
 ```
 pip3 install -r requirements.txt
 go get gopkg.in/ini.v1
+go env -w GO111MODULE=auto
 mv config.sample.ini config.ini
 # подправить config.ini
 ./compile.py
