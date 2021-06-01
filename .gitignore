@@ -128,7 +128,16 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# custom excludes
 config.ini
-letsencrypt-nic.log
-nic_token.json
+test.go
+auth.pyc
+clean.pyc
+main
 test.py
+test.go
+token_cache.ini
+*.exe
+build/
+*.zip
+*.tar.gz
