@@ -141,3 +141,4 @@ token_cache.ini
 build/
 *.zip
 *.tar.gz
+*.json

@@ -25,39 +25,6 @@ CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 TOKEN_FILE = script_dir + "/nic_token.json"
 
 
-try:
-    oauth_config = {
-	    'APP_LOGIN': CLIENT_ID,
-	    'APP_PASSWORD': CLIENT_SECRET
-    }
-except Exception as err:
-    raise SystemExit(f"oauth_config error: {err}")
-
-
-try:
-    api = DnsApi(oauth_config)
-except Exception as err:
-    raise SystemExit(f"DnsApi error: {err}")
-
-if not os.path.exists(TOKEN_FILE):
-    open(TOKEN_FILE, 'w').close()
-
-
-try:
-    api.authorize(
-	    username = USERNAME,
-	    password = PASSWORD,
-	    token_filename = TOKEN_FILE
-    )
-except Exception as err:
-    os.remove(TOKEN_FILE)
-    api.authorize(
-	    username = USERNAME,
-	    password = PASSWORD,
-	    token_filename = TOKEN_FILE
-    )
-
-
 def mainDomainTail(domain):
     domain = domain.split(".")
     domain = domain[len(domain)-2:]
@@ -71,20 +38,11 @@ def mainDomainTail(domain):
     return False
 
 
-CERTBOT_DOMAIN = mainDomainTail(CERTBOT_DOMAIN)
-
-
-try:
-    records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
-except Exception as err:
-    raise SystemExit(f"api.records error: {err}")
-
-
 def findTXTID(data):
     ids = []
     for record in data:
         # skip all records except TXT
-        if type(record) is TXTRecord:
+        if type(record) is TXTRecord or dict:
             # convert TXTRecord type to string
             record = repr(record)
             # convert string to dictionary
@@ -94,10 +52,52 @@ def findTXTID(data):
     return ids
 
 
-try:
-    records_id = findTXTID(records)
-    for id in records_id:
-        api.delete_record(id, SERVICE_ID, CERTBOT_DOMAIN)
-    api.commit(SERVICE_ID, CERTBOT_DOMAIN)
-except Exception as err:
-    raise SystemExit(f"api.delete_record error: {err}")
+def main():
+    try:
+        oauth_config = {
+            'APP_LOGIN': CLIENT_ID,
+            'APP_PASSWORD': CLIENT_SECRET
+        }
+    except Exception as err:
+        raise SystemExit(f"oauth_config error: {err}")
+
+    try:
+        api = DnsApi(oauth_config)
+    except Exception as err:
+        raise SystemExit(f"DnsApi error: {err}")
+
+    if not os.path.exists(TOKEN_FILE):
+        open(TOKEN_FILE, 'w').close()
+
+    try:
+        api.authorize(
+            username = USERNAME,
+            password = PASSWORD,
+            token_filename = TOKEN_FILE
+        )
+    except Exception as err:
+        os.remove(TOKEN_FILE)
+        api.authorize(
+            username = USERNAME,
+            password = PASSWORD,
+            token_filename = TOKEN_FILE
+        )
+
+    CERTBOT_DOMAIN = mainDomainTail(CERTBOT_DOMAIN)
+
+    try:
+        records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
+    except Exception as err:
+        raise SystemExit(f"api.records error: {err}")
+
+    try:
+        records_id = findTXTID(records)
+        for id in records_id:
+            api.delete_record(id, SERVICE_ID, CERTBOT_DOMAIN)
+        api.commit(SERVICE_ID, CERTBOT_DOMAIN)
+    except Exception as err:
+        raise SystemExit(f"api.delete_record error: {err}")
+
+
+if __name__ == '__main__':
+    main()
