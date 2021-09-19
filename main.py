@@ -1,13 +1,10 @@
 import os, sys
 from configparser import ConfigParser
 import platform
-import subprocess
-from email.mime.text import MIMEText
-import smtplib
 from datetime import date
 import logging as log
-import cryptography
-from cryptography.fernet import Fernet
+from func import Func
+import argparse
 
 try:
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -47,163 +44,81 @@ if platform.system() == "Windows":
 else:
     AUTH_HOOK = f'{script_dir}/auth'
     CLEAN_HOOK = f'{script_dir}/clean'
-ENC_KEY = '0IFzRIVb4i42OPaovw0RDHNgOiRsKLlyDumAW_xFs0M='
+ENC_KEY = 'XXX'
+ENC_DAT = f'{script_dir}/enc.dat'
 
-log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(message)s', level = LOG_LEVEL, filename = f'{script_dir}/{LOG_FILE}')
-
-def call(command):
-    try:
-	    process = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, universal_newlines=True)
-	    std_out, std_err = process.communicate()
-	    return process.returncode, std_out, std_err
-    except Exception as err:
-        log.error(f'call: {err}')
-        raise SystemExit(f'call: {err}')
-
-
-def sendEmail(subject, text, test=False):
-    try:
-        RECIPIENT_LIST = ','.join(RECIPIENT)
-        BODY = "\r\n".join((
-            "From: %s" % SENDER,
-            "To: %s" % RECIPIENT_LIST,
-            "Subject: %s" % subject,
-            "",
-            text
-        ))
-        server = smtplib.SMTP(SMTPSERVER, SMTPPORT)
-        # if SMTPPASS not empty then use smtp authentication with tls
-        if len(SMTPPASS) > 0:
-            server.ehlo()
-            server.starttls()
-            server.login(SMTPUSER, SMTPPASS)
-        server.sendmail(SENDER, RECIPIENT, BODY)
-        server.quit()
-        if test:
-            return True
-    except Exception as err:
-        log.error(f'sendEmail: {err}')
-        raise SystemExit(f'sendEmail: {err}')
-
-
-# make domains list like '-d domain1.com -d domain2.com...'
-def makeList():
-    try:
-        tmp = []
-        for domain in ZONE:
-            domain = f'-d {domain}'
-            tmp.append(domain)
-        data = (' ').join(tmp)
-        return data
-    except Exception as err:
-        log.error(f'makeList: {err}')
-        raise SystemExit(f'makeList: {err}')
-
-
-def makeMainDomain():
-    try:
-        main_domain = ZONE[0]
-        if '*' in main_domain:
-            # if main_domain contains wildcard then remove wildcard and dot
-            main_domain[2:]
-        return main_domain
-    except Exception as err:
-        log.error(f'makeMainDomain: {err}')
-        raise SystemExit(f'makeMainDomain: {err}')
-
-
-def acmeRun(test=False, renew=False):
-    try:
-        MAIN_DOMAIN = makeMainDomain()
-        DOMAIN_LIST = makeList()
-        DRY_RUN = ''
-        if test:
-            DRY_RUN = '--dry-run'
-        PARAM = 'certonly'
-        if renew:
-            PARAM = 'renew --force-renewal'
-        code, out, err = call(f'{CERTBOT} {PARAM} --agree-tos --email {ADMIN_EMAIL} --config-dir {CONFIG_DIR} --cert-name {MAIN_DOMAIN} --manual --preferred-challenges dns {DRY_RUN} --manual-auth-hook {AUTH_HOOK} --manual-cleanup-hook {CLEAN_HOOK} {DOMAIN_LIST}')
-        return code, out, err
-    except Exception as err:
-        log.error(f'acmeRun: {err}')
-        raise SystemExit(f'acmeRun: {err}')
-
-
-def reloadServer():
-    try:
-        code, out, err = call(TESTCONFIG)
-        if code != 0:
-            return code, out, err
-        code, out, err = call(RELOADCONFIG)
-        return code, out, err
-    except Exception as err:
-        log.error(f'reloadServer: {err}')
-        raise SystemExit(f'reloadServer: {err}')
-
-
-def exportCredentials(USERNAME, PASSWORD, CLIENTID, CLIENT_SECRET):
-    os.environ['NICUSER'] = USERNAME
-    os.environ['NICPASS'] = PASSWORD
-    os.environ['NICID'] = CLIENTID
-    os.environ[NICSECRET] = CLIENT_SECRET
-
-
-def destroyCredentials():
-    os.environ.clear()
-
-
-def deactivated():
-    try:
-        today = date.today()
-        # current date for search in log
-        c_date = str(today.strftime("%Y-%m-%d"))
-        # string for search in log
-        s_str = 'deactivated'
-        with open(LE_LOG) as f:
-            dump = f.readlines()
-        if line in dump:
-            if c_date in line and s_str in line:
-                return True
-        return False
-    except Exception as err:
-        log.error(f'deactivated: {err}')
-        raise SystemExit(f'deactivated: {err}')
-
-
-# uname - username
-# pwd - password
-# cid - client id
-# cs - client secret
-def encrypt(uname, pwd, cid, cs):
-    try:
-        fernet = Fernet(ENC_KEY.encode())
-        string = f'{uname},{pwd},{cid},{cs}'
-        encrypted = fernet.encrypt(string.encode())
-        with open(f'{script_dir}/enc.dat', 'wb') as f:
-            f.write(encrypted)
-        return True
-    except Exception as err:
-        log.error(f'encrypt: {err}')
-        raise SystemExit(f'encrypt: {err}')
-
-
-# return username, password, client_id, client_secret
-def decrypt():
-    try:
-        with open(f'{script_dir}/enc.dat', 'rb') as f:
-            data = f.read()
-        fernet = Fernet(ENC_KEY.encode())
-        decrypted = fernet.decrypt(data)
-        d = decrypted.decode().split(',')
-        return d[0], d[1], d[2], d[3]
-    except Exception as err:
-        log.error(f'decrypt: {err}')
-        raise SystemExit(f'decrypt: {err}')
+log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(message)s', level = LOG_LEVEL, filename = f'{script_dir}/{LOG_FILE}', filemode='w')
 
 
 def main():
-    print('-= LetsEncrypt NIC =-')
-    logging.info('-= LetsEncrypt NIC =-')
+    parser = argparse.ArgumentParser(description='LetsEncrypt NIC')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-v', '--verbose', action='store_true', help='print verbose', required=False)
+    group.add_argument('-t', '--test', action='store_true', help='dry run', required=False)
+    group.add_argument('-n', '--new-cert', action='store_true', help='obtain new certificate', required=False)
+    group.add_argument('-a', '--add-creds', action='store_true', help='add credentials', required=False)
+    args = parser.parse_args()
+
+    try:
+        if args.add_creds:
+            nicuser, nicpass, nic_id, nic_sec = Func.inputNICCreds()
+            Func.encrypt(ENC_KEY, ENC_DAT, nicuser, nicpass, nic_id, nic_sec)
+            print('Credentials encoded and saved! Exit...')
+            sys.exit(0)
+        if args.verbose:
+            print('-= LetsEncrypt NIC =-')
+            log.info('-= LetsEncrypt NIC =-')
+        USER, PASS, CLIENT_ID, CLIENT_SECRET = Func.decrypt(ENC_KEY, ENC_DAT)
+        Func.exportCredentials(USER, PASS, CLIENT_ID, CLIENT_SECRET)
+        if args.verbose:
+            print('Preparing domain list...')
+            log.info('Preparing domain list...')
+        maindomain = Func.makeMainDomain(ZONE)
+        domains = Func.makeList(ZONE)
+        renew = True
+        if args.new_cert:
+            renew = False
+        if args.test:
+            if args.verbose:
+                print('[+] ACME Test: [ START ]')
+                log.info('[+] ACME Test: [ START ]')
+            Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=True, renew)
+            if args.verbose:
+                log.info('-= Program completed! =-')
+                sys.exit('-= Program completed! =-')
+        if args.verbose:
+            print('[+] ACME Run: [ START ]')
+            log.info('[+] ACME Run: [ START ]')
+        Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, renew)
+        if WEBSERVERENABLED:
+            if args.verbose:
+                print('[+] SERVER Reload: [ START ]')
+                log.info('[+] SERVER Reload: [ START ]')
+                Func.reloadServer(TESTCONFIG, RELOADCONFIG)
+            if args.verbose:
+                print('[+] SERVER Reload: [ DONE ]')
+                log.info('[+] SERVER Reload: [ DONE ]')
+        Func.destroyCredentials()
+        if POSTHOOKENABLED:
+            if args.verbose:
+                print('[+] POST HOOK Run: [ START]')
+                log.error('[+] POST HOOK Run: [ START]')
+            code, out, err = Func.call(POSTHOOKSCRIPT)
+            if args.verbose:
+                print('[+] POST HOOK Run: [ DONE ]')
+                log.error('[+] POST HOOK Run: [ DONE ]')
+        if args.verbose:
+            log.info('-= Program completed! =-')
+            sys.exit('-= Program completed! =-')
+    except Exception as err:
+        log.error(err)
+        subject = f'[ {HOSTNAME} ] ACME Test: [ FAILED ]'
+        if Func.deactivated(LE_LOG):
+            subject = f'[ {HOSTNAME} ] ACME Test: account deactivated'
+            log.error(subject)
+        if SMTPENABLED:
+            Func.sendEmail(SENDER, RECIPIENT, subject, err, SMTPSERVER, SMTPPORT, SMTPUSER, SMTPUSER)
+        raise SystemExit(err)
 
 
 if __name__ == '__main__':

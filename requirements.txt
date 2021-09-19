@@ -4,3 +4,4 @@ tld
 cryptography
 cx_Freeze
 pytest
+argparse

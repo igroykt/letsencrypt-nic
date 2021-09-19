@@ -1,23 +1,16 @@
 import os, sys
 from nic_api import DnsApi
-from nic_api.models import TXTRecord
 from configparser import ConfigParser
 import time
-import dns.resolver
 from tld import get_tld
-
+from func import Func
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
-
-
 config = ConfigParser()
-
-
 try:
     config.read(script_dir + "/config.ini")
 except Exception as err:
     raise SystemExit(f"Config parse: {err}")
-
 
 USERNAME = os.getenv('NICUSER')
 PASSWORD = os.getenv('NICPASS')
@@ -31,51 +24,6 @@ RETRIES = int(config.get('GENERAL', 'RETRIES'))
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 CERTBOT_VALIDATION = os.getenv('CERTBOT_VALIDATION')
 TOKEN_FILE = script_dir + "/nic_token.json"
-
-
-#def checkTXTRecord(query_domain, main_domain):
-def checkTXTRecord(query_domain, test=False):
-    '''time.sleep(SLEEP)
-    dns_list = []
-    resolver = dns.resolver.Resolver(configure=False)
-    resolver.nameservers = ['8.8.8.8']
-    answers = dns.resolver.resolve(main_domain, 'NS')
-    for rdata in answers:
-        rdata = str(rdata)[:-1]
-        dns_list.append(rdata)
-    dns_list.sort()
-    new_dns_list = []
-    resolver = dns.resolver.Resolver(configure=False)
-    for item in dns_list:
-        answers = dns.resolver.resolve(item, 'A')
-        for rdata in answers:
-            rdata = str(rdata)
-            new_dns_list.append(rdata)
-    resolver = dns.resolver.Resolver(configure=False)
-    i = 1
-    dns_size = len(new_dns_list)
-    for server in new_dns_list:
-        resolver.nameservers = [server]
-        try:
-            resolver.resolve(f'_acme-challenge.{query_domain}', 'TXT')
-            return
-        except dns.resolver.NXDOMAIN as err:
-            if i >= dns_size:
-                raise SystemExit(err)
-            i += 1
-            pass'''
-    for server in DNS_SERVER:
-        resolver = dns.resolver.Resolver(configure=False)
-        resolver.nameservers = [server]
-        try:
-            if test:
-                resolver.resolve(query_domain, 'A')
-                return True
-            resolver.resolve(f'_acme-challenge.{query_domain}', 'TXT')
-        except Exception as err:
-            if test:
-                return
-            raise SystemExit(f'DNS error: {err}')
 
 
 def main():
@@ -133,7 +81,7 @@ def main():
     i = 1
     while i <= RETRIES:
         try:
-            checkTXTRecord(query_domain, main_domain)
+            Func.checkTXTRecord(query_domain, main_domain)
             break
         except Exception:
             i += 1

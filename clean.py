@@ -1,20 +1,14 @@
 import os, sys
 from nic_api import DnsApi
-from nic_api.models import TXTRecord
 from configparser import ConfigParser
-
+from func import Func
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
-
-
 config = ConfigParser()
-
-
 try:
     config.read(script_dir + "/config.ini")
 except Exception as err:
     raise SystemExit(f"Config parse: {err}")
-
 
 USERNAME = os.getenv('NICUSER')
 PASSWORD = os.getenv('NICPASS')
@@ -23,33 +17,6 @@ CLIENT_SECRET = os.getenv('NICSECRET')
 SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 TOKEN_FILE = script_dir + "/nic_token.json"
-
-
-def mainDomainTail(domain):
-    domain = domain.split(".")
-    domain = domain[len(domain)-2:]
-    tmp = []
-    for level in domain:
-        if "*" not in level:
-            tmp.append(level)
-    domain = '.'.join(tmp)
-    if domain:
-        return domain
-    return False
-
-
-def findTXTID(data):
-    ids = []
-    for record in data:
-        # skip all records except TXT
-        if type(record) is TXTRecord or dict:
-            # convert TXTRecord type to string
-            record = repr(record)
-            # convert string to dictionary
-            record = eval(record)
-            if "_acme-challenge" in record['name']:
-                ids.append(record['id'])
-    return ids
 
 
 def main():
@@ -83,7 +50,7 @@ def main():
             token_filename = TOKEN_FILE
         )
 
-    CERTBOT_DOMAIN = mainDomainTail(CERTBOT_DOMAIN)
+    CERTBOT_DOMAIN = Func.mainDomainTail(CERTBOT_DOMAIN)
 
     try:
         records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
@@ -91,7 +58,7 @@ def main():
         raise SystemExit(f"api.records error: {err}")
 
     try:
-        records_id = findTXTID(records)
+        records_id = Func.NIC_findTXTID(records)
         for id in records_id:
             api.delete_record(id, SERVICE_ID, CERTBOT_DOMAIN)
         api.commit(SERVICE_ID, CERTBOT_DOMAIN)

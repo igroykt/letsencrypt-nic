@@ -142,3 +142,4 @@ build/
 *.tar.gz
 *.json
 enc.dat
+test2.py
