@@ -18,22 +18,22 @@ ADMIN_EMAIL = config.get('GENERAL', 'ADMIN_EMAIL')
 CONFIG_DIR = config.get('GENERAL', 'LE_CONFIG_DIR')
 CERTBOT = config.get('GENERAL', 'CERTBOT')
 LELOG = config.get('GENERAL', 'LE_LOG')
-WEBSERVERENABLED = config.get('WEBSERVER', 'ENABLED')
+WEBSERVERENABLED = config.getboolean('WEBSERVER', 'ENABLED')
 TESTCONFIG = config.get('WEBSERVER', 'TEST_CONFIG')
 RELOADCONFIG = config.get('WEBSERVER', 'RELOAD_CONFIG')
-SMTPENABLED = config.get('SMTP', 'ENABLED')
+SMTPENABLED = config.getboolean('SMTP', 'ENABLED')
 SMTPSERVER = config.get('SMTP', 'SERVER')
-SMTPPORT = config.get('SMTP', 'PORT')
+SMTPPORT = int(config.get('SMTP', 'PORT'))
 SMTPUSER = config.get('SMTP', 'USERNAME')
 SMTPPASS = config.get('SMTP', 'PASSWORD')
 SENDER = config.get('SMTP', 'FROM')
 RECIPIENT = config.get('SMTP', 'TO').split(',')
-SLACKENABLED = config.get('SLACK', 'ENABLED')
+SLACKENABLED = config.getboolean('SLACK', 'ENABLED')
 SLACKWEBHOOK = config.get('SLACK', 'WEBHOOK')
-TELEGRAMENABLED = config.get('TELEGRAM', 'ENABLED')
+TELEGRAMENABLED = config.getboolean('TELEGRAM', 'ENABLED')
 TELEGRAMTOKEN = config.get('TELEGRAM', 'TOKEN')
 TELEGRAMCHATID = config.get('TELEGRAM', 'CHAT_ID')
-POSTHOOKENABLED = config.get('POSTHOOK', 'ENABLED')
+POSTHOOKENABLED = config.getboolean('POSTHOOK', 'ENABLED')
 POSTHOOKSCRIPT = config.get('POSTHOOK', 'SCRIPT')
 HOSTNAME = platform.node()
 LOG_FILE = config.get('LOG', 'LOG_FILE')
@@ -47,8 +47,8 @@ if platform.system() == "Windows":
     AUTH_HOOK = f'{script_dir}/auth.exe'
     CLEAN_HOOK = f'{script_dir}/clean.exe'
 else:
-    AUTH_HOOK = f'python3 {script_dir}/auth.py'
-    CLEAN_HOOK = f'python3 {script_dir}/clean.py'
+    AUTH_HOOK = f'{script_dir}/auth.py'
+    CLEAN_HOOK = f'{script_dir}/clean.py'
 ENC_KEY = '0IFzRIVb4i42OPaovw0RDHNgOiRsKLlyDumAW_xFs0M='
 ENC_DAT = f'{script_dir}/enc.dat'
 
@@ -57,20 +57,31 @@ log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(message)s', level = LO
 
 def notify(subject, msg, test=False):
     if SMTPENABLED:
-        Func.sendEmail(SENDER, RECIPIENT, subject, err, SMTPSERVER, SMTPPORT, SMTPUSER, SMTPUSER)
+        try:
+            Func.sendEmail(SENDER, RECIPIENT, subject, err, SMTPSERVER, SMTPPORT, SMTPUSER, SMTPUSER)
+        except Exception as err:
+            log.error(err)
+            sys.exit(err)
     if SLACKENABLED:
-        Func.slackSend(SLACKWEBHOOK, f'{subject} {msg}')
+        try:
+            Func.slackSend(SLACKWEBHOOK, f'{subject} {msg}')
+        except Exception as err:
+            log.error(err)
+            sys.exit(err)
     if TELEGRAMENABLED:
-        Func.telegramSend(TELEGRAMTOKEN, TELEGRAMCHATID, f'{subject} {msg}')
+        try:
+            Func.telegramSend(TELEGRAMTOKEN, TELEGRAMCHATID, f'{subject} {msg}')
+        except Exception as err:
+            log.error(err)
+            sys.exit(err)
 
 
 def main():
     parser = argparse.ArgumentParser(description='LetsEncrypt NIC')
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-v', '--verbose', action='store_true', help='print verbose', required=False)
-    group.add_argument('-t', '--test', action='store_true', help='dry run', required=False)
-    group.add_argument('-n', '--new-cert', action='store_true', help='obtain new certificate', required=False)
-    group.add_argument('-a', '--add-creds', action='store_true', help='add credentials', required=False)
+    parser.add_argument('-v', dest='verbose', help='verbose output', action='store_true', required=False)
+    parser.add_argument('-t', dest='test', help='test (not actual run)', action='store_true', required=False)
+    parser.add_argument('-n', dest='new_cert', help='obtain new certificate', action='store_true', required=False)
+    parser.add_argument('-a', dest='add_creds', help='add credentials', action='store_true', required=False)
     args = parser.parse_args()
 
     try:
@@ -88,7 +99,7 @@ def main():
             USER, PASS, CLIENT_ID, CLIENT_SECRET = Func.decrypt(ENC_KEY, ENC_DAT)
         except Exception as err:
             log.error(err)
-            notify(f'[ {HOSTNAME} ] decrypt [ FAILED ]', err)
+            notify(f'[ {HOSTNAME} ] decrypt [ FAILED ]', str(err))
             raise SystemExit(err)
         # export credentials
         Func.exportCredentials(USER, PASS, CLIENT_ID, CLIENT_SECRET)
@@ -101,7 +112,7 @@ def main():
             domains = Func.makeList(ZONE)
         except Exception as err:
             log.error(err)
-            notify(f'[ {HOSTNAME} ] makeList [ FAILED ]', err)
+            notify(f'[ {HOSTNAME} ] makeList [ FAILED ]', str(err))
             raise SystemExit(err)
         # certbot dry run
         if args.test:
@@ -109,10 +120,13 @@ def main():
                 print('[+] ACME Test: [ START ]')
             log.info('[+] ACME Test: [ START ]')
             try:
-                code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=True, renew=args.new_cert)
+                code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=True, new=args.new_cert)
+                if code != 0:
+                    log.error(err)
+                    sys.exit(err)
             except Exception as err:
                 log.error(err)
-                notify(f'[ {HOSTNAME} ] ACME Test: [ FAILED ]', err, test=True)
+                notify(f'[ {HOSTNAME} ] ACME Test: [ FAILED ]', str(err), test=True)
                 raise SystemExit(err)
             if args.verbose:
                 print('[+] ACME Test: [ DONE ]')
@@ -124,10 +138,13 @@ def main():
             print('[+] ACME Run: [ START ]')
         log.info('[+] ACME Run: [ START ]')
         try:
-            code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, renew=args.new_cert)
+            code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, new=args.new_cert)
+            if code != 0:
+                log.error(err)
+                sys.exit(err)
         except Exception as err:
             log.error(err)
-            notify(f'[ {HOSTNAME} ] ACME Run: [ FAILED ]', err)
+            notify(f'[ {HOSTNAME} ] ACME Run: [ FAILED ]', str(err))
             raise SystemExit(err)
         if args.verbose:
             print('[+] ACME Run: [ DONE ]')
@@ -141,7 +158,7 @@ def main():
                 Func.reloadServer(TESTCONFIG, RELOADCONFIG)
             except Exception as err:
                 log.error(err)
-                notify(f'[ {HOSTNAME} ] SERVER Reload [ FAILED ]', err)
+                notify(f'[ {HOSTNAME} ] SERVER Reload [ FAILED ]', str(err))
                 raise SystemExit(err)
             if args.verbose:
                 print('[+] SERVER Reload: [ DONE ]')
@@ -152,21 +169,21 @@ def main():
         if POSTHOOKENABLED:
             if args.verbose:
                 print('[+] POST HOOK Run: [ START]')
-            log.error('[+] POST HOOK Run: [ START]')
+            log.info('[+] POST HOOK Run: [ START]')
             try:
                 code, out, err = Func.call(POSTHOOKSCRIPT)
             except Exception as err:
                 log.error(err)
-                notify(f'[ {HOSTNAME} ] POST HOOK Run [ FAILED ]', err)
+                notify(f'[ {HOSTNAME} ] POST HOOK Run [ FAILED ]', str(err))
                 raise SystemExit(err)
             if args.verbose:
                 print('[+] POST HOOK Run: [ DONE ]')
-            log.error('[+] POST HOOK Run: [ DONE ]')
+            log.info('[+] POST HOOK Run: [ DONE ]')
         # complete
         if args.verbose:
             print('-= Program completed! =-')
         log.info('-= Program completed! =-')
-        sys.exit('-= Program completed! =-')
+        sys.exit(0)
     except KeyboardInterrupt:
         raise SystemExit('\n-= Program terminated... =-')
 

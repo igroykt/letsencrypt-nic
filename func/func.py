@@ -69,6 +69,10 @@ class Func:
                 "",
                 text
             ))
+            if len(SMTPSERVER) == 0:
+                SMTPSERVER = 'localhost'
+            if len(SMTPPORT) == 0:
+                SMTPPORT = 25
             server = smtplib.SMTP(SMTPSERVER, SMTPPORT)
             # if SMTPPASS not empty then use smtp authentication with tls
             if len(SMTPPASS) > 0:
@@ -110,7 +114,7 @@ class Func:
 
 
     @classmethod
-    def acmeRun(self, MAIN_DOMAIN, DOMAIN_LIST, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=False, renew=False):
+    def acmeRun(self, MAIN_DOMAIN, DOMAIN_LIST, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=False, new=False):
         try:
             #MAIN_DOMAIN = self.makeMainDomain(ZONE)
             #DOMAIN_LIST = self.makeList(ZONE)
@@ -118,7 +122,7 @@ class Func:
             if test:
                 DRY_RUN = '--dry-run'
             PARAM = 'certonly'
-            if renew:
+            if not new:
                 PARAM = 'renew --force-renewal'
             code, out, err = self.call(f'{CERTBOT} {PARAM} --agree-tos --email {ADMIN_EMAIL} --config-dir {CONFIG_DIR} --cert-name {MAIN_DOMAIN} --manual --preferred-challenges dns {DRY_RUN} --manual-auth-hook {AUTH_HOOK} --manual-cleanup-hook {CLEAN_HOOK} {DOMAIN_LIST}')
             return code, out, err

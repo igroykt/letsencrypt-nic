@@ -1,5 +1,6 @@
 import os, sys
 from nic_api import DnsApi
+from nic_api.models import TXTRecord
 from configparser import ConfigParser
 import time
 from tld import get_tld
@@ -7,6 +8,7 @@ from func import Func
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 config = ConfigParser()
+
 try:
     config.read(script_dir + "/config.ini")
 except Exception as err:
@@ -56,11 +58,12 @@ def main():
             password = PASSWORD,
             token_filename = TOKEN_FILE
         )
-        if "*" in CERTBOT_DOMAIN:
-            domain = CERTBOT_DOMAIN.split(".")[1:]
-            domain = ".".join(domain)
-        else:
-            domain = CERTBOT_DOMAIN
+
+    if "*" in CERTBOT_DOMAIN:
+        domain = CERTBOT_DOMAIN.split(".")[1:]
+        domain = ".".join(domain)
+    else:
+        domain = CERTBOT_DOMAIN
 
     domain_object = get_tld(domain, fix_protocol=True, as_object=True)
     main_domain = f"{domain_object.domain}.{domain_object}"
@@ -81,7 +84,7 @@ def main():
     i = 1
     while i <= RETRIES:
         try:
-            Func.checkTXTRecord(query_domain, main_domain)
+            Func.checkTXTRecord(DNS_SERVER, query_domain)
             break
         except Exception:
             i += 1

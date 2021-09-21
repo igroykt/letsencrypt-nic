@@ -5,6 +5,7 @@ from func import Func
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 config = ConfigParser()
+
 try:
     config.read(script_dir + "/config.ini")
 except Exception as err:
@@ -50,18 +51,18 @@ def main():
             token_filename = TOKEN_FILE
         )
 
-    CERTBOT_DOMAIN = Func.mainDomainTail(CERTBOT_DOMAIN)
+    main_domain = Func.mainDomainTail(CERTBOT_DOMAIN)
 
     try:
-        records = api.records(SERVICE_ID, CERTBOT_DOMAIN)
+        records = api.records(SERVICE_ID, main_domain)
     except Exception as err:
         raise SystemExit(f"api.records error: {err}")
 
     try:
         records_id = Func.NIC_findTXTID(records)
         for id in records_id:
-            api.delete_record(id, SERVICE_ID, CERTBOT_DOMAIN)
-        api.commit(SERVICE_ID, CERTBOT_DOMAIN)
+            api.delete_record(id, SERVICE_ID, main_domain)
+        api.commit(SERVICE_ID, main_domain)
     except Exception as err:
         raise SystemExit(f"api.delete_record error: {err}")
 
