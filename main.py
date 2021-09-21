@@ -47,8 +47,8 @@ if platform.system() == "Windows":
     AUTH_HOOK = f'{script_dir}/auth.exe'
     CLEAN_HOOK = f'{script_dir}/clean.exe'
 else:
-    AUTH_HOOK = f'{script_dir}/auth'
-    CLEAN_HOOK = f'{script_dir}/clean'
+    AUTH_HOOK = f'python3 {script_dir}/auth.py'
+    CLEAN_HOOK = f'python3 {script_dir}/clean.py'
 ENC_KEY = '0IFzRIVb4i42OPaovw0RDHNgOiRsKLlyDumAW_xFs0M='
 ENC_DAT = f'{script_dir}/enc.dat'
 
