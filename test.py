@@ -39,7 +39,7 @@ assert result == 'mydomain.ru'
 
 ENC_KEY = '0IFzRIVb4i42OPaovw0RDHNgOiRsKLlyDumAW_xFs0M='
 script_dir = os.path.dirname(os.path.realpath(__file__))
-ENC_DAT = f'{script_dir}/enc.dat'
+ENC_DAT = f'{script_dir}/test_enc.dat'
 result = Func.encrypt(ENC_KEY, ENC_DAT, 'testuser', 'testpass', 'testid', 'testsecret')
 assert isinstance(result, bool)
 

@@ -27,7 +27,13 @@ class Func:
                     resolver.resolve(query_domain, 'A')
                     return True
                 resolver.resolve(f'_acme-challenge.{query_domain}', 'TXT')
-        except Exception as err:
+        except resolver.NXDOMAIN:
+            pass
+        except resolver.NoAnswer:
+            pass
+        except resolver.Timeout:
+            pass
+        except resolver.SERVFAIL as err:
             raise Exception(f'checkTXTRecord: {err}')
 
 
