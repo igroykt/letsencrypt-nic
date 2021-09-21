@@ -5,3 +5,5 @@ cryptography
 cx_Freeze
 pytest
 argparse
+slack-webhook
+telegram

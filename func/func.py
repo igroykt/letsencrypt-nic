@@ -1,4 +1,4 @@
-import os
+import os, sys
 import dns.resolver
 from nic_api.models import TXTRecord
 import subprocess
@@ -6,10 +6,16 @@ from email.mime.text import MIMEText
 import smtplib
 import cryptography
 from cryptography.fernet import Fernet
+from getpass import getpass
+from slack_webhook import Slack
+import telegram
+from datetime import date
+
 
 class Func:
     def __init__(self):
         pass
+
 
     @classmethod
     def checkTXTRecord(self, DNS_SERVER, query_domain, test=False):
@@ -40,24 +46,6 @@ class Func:
             return False
         except Exception as err:
             raise Exception(f'mainDomainTail: {err}')
-
-
-    @classmethod
-    def NIC_findTXTID(self, data):
-        try:
-            ids = []
-            for record in data:
-                # skip all records except TXT
-                if type(record) is TXTRecord or dict:
-                    # convert TXTRecord type to string
-                    record = repr(record)
-                    # convert string to dictionary
-                    record = eval(record)
-                    if "_acme-challenge" in record['name']:
-                        ids.append(record['id'])
-            return ids
-        except Exception as err:
-            raise Exception(f'NIC_findTXTID: {err}')
 
 
     @classmethod
@@ -219,12 +207,56 @@ class Func:
 
 
     @classmethod
-    def inputNICCreds(self):
+    def slackSend(self, URL, MSG):
         try:
-            username = input('Enter NIC-D: ')
-            password = input('Enter password: ')
+            slack = Slack(url = URL)
+            slack.post(text = MSG)
+        except Exception as err:
+            raise Exception(f'slackSend: {err}')
+
+
+    @classmethod
+    def telegramSend(self, TOKEN, CHAT_ID, MSG):
+        try:
+            bot = telegram.Bot(token = TOKEN)
+            bot.sendMessage(chat_id = CHAT_ID, text = MSG)
+        except Exception as err:
+            raise Exception(f'telegramSend: {err}')
+
+
+    @classmethod
+    def NIC_findTXTID(self, data):
+        try:
+            ids = []
+            for record in data:
+                # skip all records except TXT
+                if type(record) is TXTRecord or dict:
+                    # convert TXTRecord type to string
+                    record = repr(record)
+                    # convert string to dictionary
+                    record = eval(record)
+                    if "_acme-challenge" in record['name']:
+                        ids.append(record['id'])
+            return ids
+        except Exception as err:
+            raise Exception(f'NIC_findTXTID: {err}')
+
+
+    @classmethod
+    def NIC_inputCreds(self):
+        try:
+            username = input('Enter NIC-D (example: XXXXXXX/NIC-D): ')
+            password = getpass('Enter password: ')
             client_id = input('Client ID: ')
-            client_secret = input('Client secret: ')
+            client_secret = getpass('Client secret: ')
+            while True:
+                confirm = input('Confirm? (y/n): ')
+                if confirm.lower() == 'y':
+                    return username, password, client_id, client_secret
+                if confirm.lower() == 'n':
+                    sys.exit('-= Program terminated... =-')
+                print('Enter Y or N to confirm action.')
+                continue
             return username, password, client_id, client_secret
         except Exception as err:
             raise Exception(f'inputNICCreds: {err}')
