@@ -1,7 +1,6 @@
 import os, sys
 from configparser import ConfigParser
 import platform
-#from datetime import date
 import logging as log
 from func import Func
 import argparse

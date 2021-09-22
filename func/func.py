@@ -122,14 +122,13 @@ class Func:
     @classmethod
     def acmeRun(self, MAIN_DOMAIN, DOMAIN_LIST, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=False, new=False):
         try:
-            #MAIN_DOMAIN = self.makeMainDomain(ZONE)
-            #DOMAIN_LIST = self.makeList(ZONE)
             DRY_RUN = ''
             if test:
                 DRY_RUN = '--dry-run'
             PARAM = 'certonly'
             if not new:
                 PARAM = 'renew --force-renewal'
+                DOMAIN_LIST = ''
             code, out, err = self.call(f'{CERTBOT} {PARAM} --agree-tos --email {ADMIN_EMAIL} --config-dir {CONFIG_DIR} --cert-name {MAIN_DOMAIN} --manual --preferred-challenges dns {DRY_RUN} --manual-auth-hook {AUTH_HOOK} --manual-cleanup-hook {CLEAN_HOOK} {DOMAIN_LIST}')
             return code, out, err
         except Exception as err:
