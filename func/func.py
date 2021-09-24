@@ -65,7 +65,7 @@ class Func:
 
 
     @classmethod
-    def sendEmail(self, SENDER, RECIPIENT, subject, text, test=False, SMTPSERVER='', SMTPPORT='', SMTPUSER='', SMTPPASS=''):
+    def sendEmail(self, SENDER, RECIPIENT, subject, text, SMTPSERVER='', SMTPPORT='', SMTPUSER='', SMTPPASS='', test=False,):
         try:
             RECIPIENT_LIST = ','.join(RECIPIENT)
             BODY = "\r\n".join((
@@ -75,9 +75,13 @@ class Func:
                 "",
                 text
             ))
-            if len(SMTPSERVER) == 0:
+            print(SMTPSERVER)
+            print(SMTPPORT)
+            print(SMTPUSER)
+            print(SMTPPASS)
+            if not SMTPSERVER:
                 SMTPSERVER = 'localhost'
-            if len(SMTPPORT) == 0:
+            if not SMTPPORT:
                 SMTPPORT = 25
             server = smtplib.SMTP(SMTPSERVER, SMTPPORT)
             # if SMTPPASS not empty then use smtp authentication with tls
@@ -212,7 +216,7 @@ class Func:
             d = decrypted.decode().split(',')
             return d[0], d[1], d[2], d[3]
         except Exception as err:
-            raise Exception(f'decrypt: {err}')
+            raise Exception(f'decrypt: dont know how to decrypt {ENC_DAT} :(')
 
 
     @classmethod

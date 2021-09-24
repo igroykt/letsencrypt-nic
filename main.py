@@ -36,28 +36,22 @@ POSTHOOKENABLED = config.getboolean('POSTHOOK', 'ENABLED')
 POSTHOOKSCRIPT = config.get('POSTHOOK', 'SCRIPT')
 HOSTNAME = platform.node()
 LOG_FILE = config.get('LOG', 'LOG_FILE')
-if(config.get('LOG', 'LOG_LEVEL') == 'INFO'):
-    LOG_LEVEL = log.INFO
-if(config.get('LOG', 'LOG_LEVEL') == 'DEBUG'):
-    LOG_LEVEL = log.DEBUG
-if(config.get('LOG', 'LOG_LEVEL') == 'ERROR'):
-    LOG_LEVEL = log.ERROR
 if platform.system() == "Windows":
     AUTH_HOOK = f'{script_dir}/auth.exe'
     CLEAN_HOOK = f'{script_dir}/clean.exe'
 else:
     AUTH_HOOK = f'{script_dir}/auth.py'
     CLEAN_HOOK = f'{script_dir}/clean.py'
-ENC_KEY = '0IFzRIVb4i42OPaovw0RDHNgOiRsKLlyDumAW_xFs0M='
+ENC_KEY = 'XXX'
 ENC_DAT = f'{script_dir}/enc.dat'
 
-log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(message)s', level = LOG_LEVEL, filename = f'{script_dir}/{LOG_FILE}', filemode='w')
+log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(filename)s %(lineno)d: %(message)s', filename = f'{script_dir}/{LOG_FILE}', filemode='w')
 
 
 def notify(subject, msg, test=False):
     if SMTPENABLED:
         try:
-            Func.sendEmail(SENDER, RECIPIENT, subject, err, SMTPSERVER, SMTPPORT, SMTPUSER, SMTPUSER)
+            Func.sendEmail(SENDER, RECIPIENT, subject, msg, SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS)
         except Exception as err:
             log.error(err)
             sys.exit(err)

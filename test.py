@@ -22,11 +22,11 @@ result = Func.sendEmail(
     ['admin@mydomain.ru', 'security@mydomain.ru'],
     'test',
     'test message',
-    test=True,
     'smtp.gmail.com',
     '587',
     'xxx',
-    'yyy'
+    'yyy',
+    test=True,
 )
 assert isinstance(result, bool)
 '''
