@@ -40,8 +40,8 @@ if platform.system() == "Windows":
     AUTH_HOOK = f'{script_dir}/auth.exe'
     CLEAN_HOOK = f'{script_dir}/clean.exe'
 else:
-    AUTH_HOOK = f'{script_dir}/auth.py'
-    CLEAN_HOOK = f'{script_dir}/clean.py'
+    AUTH_HOOK = f'{script_dir}/auth'
+    CLEAN_HOOK = f'{script_dir}/clean'
 ENC_KEY = 'XXX'
 ENC_DAT = f'{script_dir}/enc.dat'
 
@@ -92,7 +92,7 @@ def main():
             USER, PASS, CLIENT_ID, CLIENT_SECRET = Func.decrypt(ENC_KEY, ENC_DAT)
         except Exception as err:
             log.error(err)
-            notify(f'[ {HOSTNAME} ] decrypt [ FAILED ]', str(err))
+            notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
             raise SystemExit(err)
         # export credentials
         Func.exportCredentials(USER, PASS, CLIENT_ID, CLIENT_SECRET)
@@ -105,7 +105,7 @@ def main():
             domains = Func.makeList(ZONE)
         except Exception as err:
             log.error(err)
-            notify(f'[ {HOSTNAME} ] makeList [ FAILED ]', str(err))
+            notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
             raise SystemExit(err)
         # certbot dry run
         if args.test:
@@ -119,7 +119,7 @@ def main():
                     sys.exit(err)
             except Exception as err:
                 log.error(err)
-                notify(f'[ {HOSTNAME} ] ACME Test: [ FAILED ]', str(err), test=True)
+                notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err), test=True)
                 raise SystemExit(err)
             if args.verbose:
                 print('[+] ACME Test: [ DONE ]')
@@ -137,7 +137,7 @@ def main():
                 sys.exit(err)
         except Exception as err:
             log.error(err)
-            notify(f'[ {HOSTNAME} ] ACME Run: [ FAILED ]', str(err))
+            notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
             raise SystemExit(err)
         if args.verbose:
             print('[+] ACME Run: [ DONE ]')
@@ -151,7 +151,7 @@ def main():
                 Func.reloadServer(TESTCONFIG, RELOADCONFIG)
             except Exception as err:
                 log.error(err)
-                notify(f'[ {HOSTNAME} ] SERVER Reload [ FAILED ]', str(err))
+                notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
                 raise SystemExit(err)
             if args.verbose:
                 print('[+] SERVER Reload: [ DONE ]')
@@ -167,7 +167,7 @@ def main():
                 code, out, err = Func.call(POSTHOOKSCRIPT)
             except Exception as err:
                 log.error(err)
-                notify(f'[ {HOSTNAME} ] POST HOOK Run [ FAILED ]', str(err))
+                notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
                 raise SystemExit(err)
             if args.verbose:
                 print('[+] POST HOOK Run: [ DONE ]')
