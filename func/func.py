@@ -34,7 +34,7 @@ class Func:
         except resolver.Timeout:
             pass
         except resolver.SERVFAIL as err:
-            raise Exception(f'checkTXTRecord: {err}')
+            pass
 
 
     @classmethod
@@ -194,15 +194,15 @@ class Func:
     # cid - client id
     # cs - client secret
     def encrypt(self, ENC_KEY, ENC_DAT, uname, pwd, cid, cs):
-        try:
+        #try:
             fernet = Fernet(ENC_KEY.encode())
             string = f'{uname},{pwd},{cid},{cs}'
             encrypted = fernet.encrypt(string.encode())
             with open(ENC_DAT, 'wb') as f:
                 f.write(encrypted)
             return True
-        except Exception as err:
-            raise Exception(f'encrypt: {err}')
+        #except Exception as err:
+        #    raise Exception(f'encrypt: {err}')
 
 
     @classmethod
@@ -270,6 +270,6 @@ class Func:
                     sys.exit('-= Program terminated... =-')
                 print('Enter Y or N to confirm action.')
                 continue
-            return username, password, client_id, client_secret
+            return username.strip(), password.strip(), client_id.strip(), client_secret.strip()
         except Exception as err:
             raise Exception(f'inputNICCreds: {err}')
