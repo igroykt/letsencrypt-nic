@@ -6,9 +6,12 @@ from func import Func
 import argparse
 
 try:
-    script_dir = os.path.dirname(os.path.realpath(__file__))
+    if getattr(sys, 'frozen', False):
+        script_dir = os.path.dirname(sys.executable)
+    else:
+        script_dir = os.path.dirname(os.path.realpath(__file__))
     config = ConfigParser()
-    config.read(script_dir + '/config.ini')
+    config.read(script_dir + os.sep + 'config.ini')
 except Exception as err:
     raise SystemExit(f'Config parse: {err}')
 
@@ -37,15 +40,15 @@ POSTHOOKSCRIPT = config.get('POSTHOOK', 'SCRIPT')
 HOSTNAME = platform.node()
 LOG_FILE = config.get('LOG', 'LOG_FILE')
 if platform.system() == "Windows":
-    AUTH_HOOK = f'{script_dir}/auth.exe'
-    CLEAN_HOOK = f'{script_dir}/clean.exe'
+    AUTH_HOOK = f'{script_dir}{os.sep}auth.exe'
+    CLEAN_HOOK = f'{script_dir}{os.sep}clean.exe'
 else:
-    AUTH_HOOK = f'{script_dir}/auth'
-    CLEAN_HOOK = f'{script_dir}/clean'
+    AUTH_HOOK = f'{script_dir}{os.sep}auth'
+    CLEAN_HOOK = f'{script_dir}{os.sep}clean'
 ENC_KEY = 'XXX'
-ENC_DAT = f'{script_dir}/enc.dat'
+ENC_DAT = f'{script_dir}{os.sep}enc.dat'
 
-log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(filename)s %(lineno)d: %(message)s', filename = f'{script_dir}/{LOG_FILE}', filemode='w')
+log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(filename)s %(lineno)d: %(message)s', filename = f'{script_dir}{os.sep}{LOG_FILE}', filemode='w')
 
 
 def notify(subject, msg, test=False):

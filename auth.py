@@ -6,11 +6,13 @@ import time
 from tld import get_tld
 from func import Func
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-config = ConfigParser()
-
 try:
-    config.read(script_dir + "/config.ini")
+    if getattr(sys, 'frozen', False):
+        script_dir = os.path.dirname(sys.executable)
+    else:
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+    config = ConfigParser()
+    config.read(script_dir + os.sep + "config.ini")
 except Exception as err:
     raise SystemExit(f"Config parse: {err}")
 
@@ -25,7 +27,7 @@ SLEEP = int(config.get('GENERAL', 'SLEEP'))
 RETRIES = int(config.get('GENERAL', 'RETRIES'))
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 CERTBOT_VALIDATION = os.getenv('CERTBOT_VALIDATION')
-TOKEN_FILE = script_dir + "/nic_token.json"
+TOKEN_FILE = script_dir + os.sep + "nic_token.json"
 
 
 def main():
