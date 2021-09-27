@@ -22,6 +22,7 @@ mkdir /root/bin/letsencrypt-nic
 mv build/* /root/bin/letsencrypt-nic
 cp config.ini /root/bin/letsencrypt-nic
 ```
+Ключ шифрования меняется при каждой сборке.
 
 ### Настройка
 Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register.
