@@ -4,99 +4,65 @@
 
 # LetsEncrypt NIC
 
-Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API для Linux.
+Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API.
 
 ## Зависимости
 * Python 3.8
-* Golang 1.16
-* Certbot 1.13
+* Certbot
 
-## Установка
+## Unix
+### Сборка и установка 
 ```
+pip3 install certbot
 pip3 install -r requirements.txt
-go get gopkg.in/ini.v1
-go env -w GO111MODULE=auto
 mv config.sample.ini config.ini
 # подправить config.ini
-./compile.py
-rm -f auth.py clean.py main.go
+python setup.py build
+mkdir /root/bin/letsencrypt-nic
+mv build/* /root/bin/letsencrypt-nic
+cp config.ini /root/bin/letsencrypt-nic
 ```
+Ключ шифрования меняется при каждой сборке.
 
-## Настройка
-Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register.
+### Настройка
+Для генерации CLIENT_ID и CLIENT_SECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register.
 
 SERVICE_ID можно найти в личном кабинете в разделе "Услуги/DNS-хостинг" в столбце "Услуга".
 
-USERNAME, PASSWORD, CLIENTID и CLIENTSECRET прописать в main.go в "Configuration section".
+Запустить "./main -a" и ввести данные аутентификации. 
 
 Дополнительную информацию о настройке OAuth можно найти по ссылке https://www.nic.ru/help/api-dns-hostinga_3643.html.
 
-**[GENERAL]**
+Инфо по конфигурации смотрите в wiki.
 
-| Function      | Description                                                            | Default value          |
-|---------------|------------------------------------------------------------------------|------------------------|
-| SERVICE_ID    | Идентификатор услуги                                                   | None                   |
-| ZONE          | Список доменных зон (разделенных запятыми)                             | None                   |
-| ADMIN_EMAIL   | E-mail администратора certbot                                          | None                   |
-| TTL           | Время жизни TXT записей                                                | 10                     |
-| SLEEP         | Время ожидания пока TXT запись подхватится публичными DNS серверами    | 120                    |
-| OS_SHELL      | Shell операционной системы                                             | /bin/bash              |
-| LE_CONFIG_DIR | Путь к директории для хранения конфигураций и сертификатов LetsEncrypt | /etc/letsencrypt       |
-| PYTHON        | Путь к интерпретатору Python                                           | /usr/bin/python3       |
-| CERTBOT       | Путь к certbot                                                         | /usr/local/bin/certbot |
 
-LE_CONFIG_DIR полезен в том случае, когда для некоторых ресурсов надо выписывать сертификаты по http challenge, а некоторые по dns challenge. В таком случае для dns challenge можно указать путь скажем /etc/letsencrypt-dns, тогда будет создана эта директория и аккаунты, конфиги, сертификаты для dns challenge будут храниться там.
+### Конфиденциальность
+В NIC так повелось, что чтобы получить доступ к OAuth необходимо указывать данные от учетной записи, что ни разу не секьюрно (особенно если к серверу имеют доступ другие лица). Отсюда и компиляция Python скриптов в бинарники, чтобы скрыть учетные данные и защитить от модификации.
 
-Путь к интерпретатору Python требуется, чтобы запускать бинарные файлы.
-
-**[WEBSERVER]**
-
-| Function      | Description                                   | Default value             |
-|---------------|-----------------------------------------------|---------------------------|
-| ENABLED       | Флаг активации опции                          | false                     |
-| TEST_CONFIG   | Команда тестирования конфигуарции веб-сервера | /usr/sbin/nginx -t        |
-| RELOAD_CONFIG | Команда перезапуска веб-сервера               | /usr/sbin/nginx -s reload |
-
-**[SMTP]**
-
-| Function | Description                      | Default value |
-|----------|----------------------------------|---------------|
-| ENABLED  | Флаг активации опции             | false         |
-| SERVER   | Адрес сервера                    | 127.0.0.1     |
-| PORT     | Порт сервера                     | 25            |
-| USERNAME | Логин                            | None          |
-| PASSWORD | Пароль                           | None          |
-| FROM     | Исходящий адрес почты            | None          |
-| TO       | Реципиент (разделенные запятыми) | None          |
-
-Если MTA без аутентификации, то оставьте пустыми значения USERNAME и PASSWORD.
-
-**[POSTHOOK]**
-
-| Function | Description                  | Default value |
-|----------|------------------------------|---------------|
-| ENABLED  | Флаг активации опции         | false         |
-| SCRIPT   | Путь до исполняемого скрипта | None          |
-
-POSTHOOK позволяет в конце запустить ваш скрипт. Может пригодится, если например захотите синхронизировать сертификаты на другие сервера.
-
-## Сборка
-Перед сборкой убедитесь, что в compile.py в строке shebang указан верный путь к интерпретатору (обычно должен совпадать с значением PYTHON в config.ini). Далее можно запустить ./compile.py.
-
-## Конфиденциальность
-В NIC так повелось, что чтобы получить доступ к OAuth необходимо указывать данные от учетной записи, что ни разу не секьюрно (особенно если к серверу имеют доступ другие лица). Отсюда и компиляция Python скриптов в бинарники, чтобы нельзя было модифицировать просто так и основное приложение на Golang, чтобы скрыть учетные данные и также защитить от модификации.
-
-## Тест
+### Тест
 Тестовый запуск:
 ```
 ./main -v -t
 ```
 
-## Очистка TXT
+### Очистка TXT
 Удаляются все найденные (попадающие под критерий поиска) записи. Так что можно не беспокоиться, что где-то останется лишняя запись _acme-challenge.
 
-## Cron
+### Cron
 ```
 #m      #h      #dom    #mon    #dow    #command
 0 	0 	1 	* 	* 	/path/to/letsencrypt-nic/main
+```
+
+## Windows
+### Сборка и установка 
+```
+# установить certbot https://dl.eff.org/certbot-beta-installer-win32.exe
+pip install -r requirements.txt
+move config.sample.ini config.ini
+# подправить config.ini
+python setup.py build
+mkdir c:\letsencrypt-nic
+move build\* c:\letsencrypt-nic
+copy config.ini c:\letsencrypt-nic
 ```
