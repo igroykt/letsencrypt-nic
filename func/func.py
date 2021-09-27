@@ -75,10 +75,6 @@ class Func:
                 "",
                 text
             ))
-            print(SMTPSERVER)
-            print(SMTPPORT)
-            print(SMTPUSER)
-            print(SMTPPASS)
             if not SMTPSERVER:
                 SMTPSERVER = 'localhost'
             if not SMTPPORT:
@@ -130,7 +126,8 @@ class Func:
             if test:
                 DRY_RUN = '--dry-run'
             PARAM = 'certonly'
-            if not new:
+            configExist = os.path.exists(CONFIG_DIR)
+            if not new and configExist:
                 PARAM = 'renew --force-renewal'
                 DOMAIN_LIST = ''
             code, out, err = self.call(f'{CERTBOT} {PARAM} --agree-tos --email {ADMIN_EMAIL} --config-dir {CONFIG_DIR} --cert-name {MAIN_DOMAIN} --manual --preferred-challenges dns {DRY_RUN} --manual-auth-hook {AUTH_HOOK} --manual-cleanup-hook {CLEAN_HOOK} {DOMAIN_LIST}')
@@ -270,6 +267,6 @@ class Func:
                     sys.exit('-= Program terminated... =-')
                 print('Enter Y or N to confirm action.')
                 continue
-            return username.strip(), password.strip(), client_id.strip(), client_secret.strip()
+            return username, password, client_id, client_secret
         except Exception as err:
             raise Exception(f'inputNICCreds: {err}')

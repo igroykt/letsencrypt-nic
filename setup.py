@@ -20,7 +20,6 @@ writeFile.close()
 # Dependencies are automatically detected, but it might need fine tuning.
 build_exe_options = {
     "packages": ["os", "sys", "nic_api", "configparser", "time", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram"],
-    #"include_files": ["func"],
     "build_exe": "build"
 }
 
