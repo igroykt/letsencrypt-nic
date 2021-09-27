@@ -25,7 +25,7 @@ cp config.ini /root/bin/letsencrypt-nic
 Ключ шифрования меняется при каждой сборке.
 
 ### Настройка
-Для генерации CLIENTID и CLIENTSECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register.
+Для генерации CLIENT_ID и CLIENT_SECRET необходимо зарегистировать приложение по ссылке https://www.nic.ru/manager/oauth.cgi?step=oauth.app_register.
 
 SERVICE_ID можно найти в личном кабинете в разделе "Услуги/DNS-хостинг" в столбце "Услуга".
 
