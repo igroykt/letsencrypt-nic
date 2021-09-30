@@ -89,6 +89,7 @@ def main():
             sys.exit(0)
         # decrypt
         if args.verbose:
+            os.environ['VERBOSE'] = 1
             print('-= LetsEncrypt NIC =-')
         log.info('-= LetsEncrypt NIC =-')
         try:
@@ -116,7 +117,7 @@ def main():
                 print('[+] ACME Test: [ START ]')
             log.info('[+] ACME Test: [ START ]')
             try:
-                code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=True, new=args.new_cert)
+                code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=True, new=args.new_cert, verbose=args.verbose)
                 if code != 0:
                     log.error(err)
                     sys.exit(err)
@@ -134,7 +135,7 @@ def main():
             print('[+] ACME Run: [ START ]')
         log.info('[+] ACME Run: [ START ]')
         try:
-            code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, new=args.new_cert)
+            code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, new=args.new_cert, verbose=args.verbose)
             if code != 0:
                 log.error(err)
                 sys.exit(err)

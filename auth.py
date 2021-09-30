@@ -27,11 +27,14 @@ SLEEP = int(config.get('GENERAL', 'SLEEP'))
 RETRIES = int(config.get('GENERAL', 'RETRIES'))
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 CERTBOT_VALIDATION = os.getenv('CERTBOT_VALIDATION')
+VERBOSE = os.getenv('VERBOSE')
 TOKEN_FILE = script_dir + os.sep + "nic_token.json"
 
 
 def main():
     try:
+        if VERBOSE:
+            print('Configuring OAuth...')
         oauth_config = {
             'APP_LOGIN': CLIENT_ID,
             'APP_PASSWORD': CLIENT_SECRET
@@ -48,12 +51,16 @@ def main():
         open(TOKEN_FILE, 'w').close()
 
     try:
+        if VERBOSE:
+            print('Authorize API...')
         api.authorize(
             username = USERNAME,
             password = PASSWORD,
             token_filename = TOKEN_FILE
         )
     except Exception as err:
+        if VERBOSE:
+            print('Authorize API...')
         os.remove(TOKEN_FILE)
         api.authorize(
             username = USERNAME,
@@ -71,6 +78,8 @@ def main():
     main_domain = f"{domain_object.domain}.{domain_object}"
 
     try:
+        if VERBOSE:
+            print('Create TXT record...')
         if domain_object.subdomain:
             reg_domain = f"{domain_object.subdomain}"
             query_domain = f"{domain_object.subdomain}.{domain_object.domain}.{domain_object}"
@@ -80,16 +89,22 @@ def main():
             record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
         api.add_record(record, SERVICE_ID, main_domain)
         api.commit(SERVICE_ID, main_domain)
+        if VERBOSE:
+            print('All changes are commited!')
     except Exception as err:
         raise SystemExit(f"api.add_record error: {err}")
 
     i = 1
     while i <= RETRIES:
         try:
+            if VERBOSE:
+                print('Check TXT record...')
             Func.checkTXTRecord(DNS_SERVER, query_domain)
             break
         except Exception:
             i += 1
+            if VERBOSE:
+                print(f'Attempt: {i} of {RETRIES} and TXT record not found! Sleep for {SLEEP} seconds...')
             time.sleep(SLEEP)
         finally:
             if i >= RETRIES:
