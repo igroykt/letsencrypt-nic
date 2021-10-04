@@ -5,6 +5,7 @@ from configparser import ConfigParser
 import time
 from tld import get_tld
 from func import Func
+import json
 
 try:
     if getattr(sys, 'frozen', False):
@@ -24,12 +25,11 @@ SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
 DNS_SERVER = config.get('GENERAL', 'DNS_SERVER').split(',')
 TTL = config.get('GENERAL', 'TTL')
 SLEEP = int(config.get('GENERAL', 'SLEEP'))
-RETRIES = int(config.get('GENERAL', 'RETRIES'))
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 CERTBOT_VALIDATION = os.getenv('CERTBOT_VALIDATION')
+CERTBOT_REMAINING = int(os.getenv('CERTBOT_REMAINING_CHALLENGES'))
 VERBOSE = os.getenv('VERBOSE')
 TOKEN_FILE = script_dir + os.sep + "nic_token.json"
-
 
 def main():
     try:
@@ -47,8 +47,15 @@ def main():
     except Exception as err:
         raise SystemExit(f"DnsApi error: {err}")
 
-    if not os.path.exists(TOKEN_FILE):
-        open(TOKEN_FILE, 'w').close()
+    if os.path.exists(TOKEN_FILE):
+        mtime = os.path.getmtime(TOKEN_FILE)
+        with open(TOKEN_FILE, 'r') as file:
+            content = json.load(file)
+            expires_in = int(content['expires_in'])
+        if mtime + expires_in <= time.time():
+            if VERBOSE:
+                print('Token expired. Refreshing...')
+            os.remove(TOKEN_FILE)
 
     try:
         if VERBOSE:
@@ -60,13 +67,8 @@ def main():
         )
     except Exception as err:
         if VERBOSE:
-            print('Authorize API...')
-        os.remove(TOKEN_FILE)
-        api.authorize(
-            username = USERNAME,
-            password = PASSWORD,
-            token_filename = TOKEN_FILE
-        )
+            print(f"api.authorize: {err}")
+        raise SystemExit(f"api.authorize: {err}")
 
     if "*" in CERTBOT_DOMAIN:
         domain = CERTBOT_DOMAIN.split(".")[1:]
@@ -78,8 +80,6 @@ def main():
     main_domain = f"{domain_object.domain}.{domain_object}"
 
     try:
-        if VERBOSE:
-            print('Create TXT record...')
         if domain_object.subdomain:
             reg_domain = f"{domain_object.subdomain}"
             query_domain = f"{domain_object.subdomain}.{domain_object.domain}.{domain_object}"
@@ -89,27 +89,20 @@ def main():
             record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
         api.add_record(record, SERVICE_ID, main_domain)
         api.commit(SERVICE_ID, main_domain)
-        if VERBOSE:
-            print('All changes are commited!')
     except Exception as err:
         raise SystemExit(f"api.add_record error: {err}")
 
-    i = 1
-    while i <= RETRIES:
-        try:
-            if VERBOSE:
-                print('Check TXT record...')
-            Func.checkTXTRecord(DNS_SERVER, query_domain)
+    if VERBOSE:
+        verb = True
+    while True:
+        rdata = Func.checkTXTRecord(DNS_SERVER, query_domain, verbose=verb)
+        if rdata:
             break
-        except Exception:
-            i += 1
-            if VERBOSE:
-                print(f'Attempt: {i} of {RETRIES} and TXT record not found! Sleep for {SLEEP} seconds...')
-            time.sleep(SLEEP)
-        finally:
-            if i >= RETRIES:
-                raise SystemExit(f"resolver.resolve error: Could not find validation TXT record {CERTBOT_DOMAIN}")
-
+        time.sleep(10)
+    if CERTBOT_REMAINING == 0:
+        if VERBOSE:
+            print(f'Sleep for {SLEEP} seconds...')
+        time.sleep(SLEEP)
 
 if __name__ == '__main__':
     main()

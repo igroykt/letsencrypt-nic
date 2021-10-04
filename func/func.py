@@ -10,6 +10,8 @@ from getpass import getpass
 from slack_webhook import Slack
 import telegram
 from datetime import date
+import shlex
+import time
 
 
 class Func:
@@ -18,22 +20,24 @@ class Func:
 
 
     @classmethod
-    def checkTXTRecord(self, DNS_SERVER, query_domain, test=False):
+    def checkTXTRecord(self, DNS_SERVER, query_domain, test=False, verbose=False):
         try:
-            for server in DNS_SERVER:
-                resolver = dns.resolver.Resolver(configure=False)
-                resolver.nameservers = [server]
-                if test:
-                    resolver.resolve(query_domain, 'A')
-                    return True
-                resolver.resolve(f'_acme-challenge.{query_domain}', 'TXT')
-        except resolver.NXDOMAIN:
-            pass
-        except resolver.NoAnswer:
-            pass
-        except resolver.Timeout:
-            pass
-        except resolver.SERVFAIL as err:
+            count = len(DNS_SERVER)
+            arr = []
+            while True:
+                for server in DNS_SERVER:
+                    resolver = dns.resolver.Resolver(configure=False)
+                    resolver.nameservers = [server]
+                    if test:
+                        resolver.resolve(query_domain, 'A')
+                        return True
+                    a = resolver.resolve(f'_acme-challenge.{query_domain}', 'txt')
+                    arr.append(a.response.answer)
+                if len(arr) == count:
+                    break
+                time.sleep(1)
+            return True
+        except Exception:
             pass
 
 
@@ -57,8 +61,8 @@ class Func:
     @classmethod
     def call(self, command, verb=False):
         try:
-            process = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, universal_newlines=True)
             if verb:
+                process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
                 while True:
                     std_out = process.stdout.readline().decode()
                     if std_out == '' and process.poll() is not None:
@@ -66,8 +70,9 @@ class Func:
                     if std_out:
                         print(std_out.strip())
                 rc = process.poll()
-                return process.returncode, rc, ''
+                return process.returncode, rc, process.stderr
             else:
+                process = subprocess.Popen(command, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True, universal_newlines=True)
                 std_out, std_err = process.communicate()
                 return process.returncode, std_out, std_err
         except Exception as err:
@@ -140,7 +145,10 @@ class Func:
             if not new and configExist:
                 PARAM = 'renew --force-renewal'
                 DOMAIN_LIST = ''
-            code, out, err = self.call(f'{CERTBOT} {PARAM} --agree-tos --email {ADMIN_EMAIL} --config-dir {CONFIG_DIR} --cert-name {MAIN_DOMAIN} --manual --preferred-challenges dns {DRY_RUN} --manual-auth-hook {AUTH_HOOK} --manual-cleanup-hook {CLEAN_HOOK} {DOMAIN_LIST}', verb=verbose)
+            VERB = ''
+            if verbose:
+                VERB = '-v'
+            code, out, err = self.call(f'{CERTBOT} {VERB} {PARAM} --agree-tos --email {ADMIN_EMAIL} --config-dir {CONFIG_DIR} --cert-name {MAIN_DOMAIN} --manual --preferred-challenges dns {DRY_RUN} --manual-auth-hook {AUTH_HOOK} --manual-cleanup-hook {CLEAN_HOOK} {DOMAIN_LIST}', verb=verbose)
             return code, out, err
         except Exception as err:
             raise Exception(f'acmeRun: {err}')

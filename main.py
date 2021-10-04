@@ -89,7 +89,7 @@ def main():
             sys.exit(0)
         # decrypt
         if args.verbose:
-            os.environ['VERBOSE'] = 1
+            os.environ['VERBOSE'] = "true"
             print('-= LetsEncrypt NIC =-')
         log.info('-= LetsEncrypt NIC =-')
         try:

@@ -2,6 +2,8 @@ import os, sys
 from nic_api import DnsApi
 from configparser import ConfigParser
 from func import Func
+import json
+import time
 
 try:
     if getattr(sys, 'frozen', False):
@@ -39,8 +41,15 @@ def main():
     except Exception as err:
         raise SystemExit(f"DnsApi error: {err}")
 
-    if not os.path.exists(TOKEN_FILE):
-        open(TOKEN_FILE, 'w').close()
+    if os.path.exists(TOKEN_FILE):
+        mtime = os.path.getmtime(TOKEN_FILE)
+        with open(TOKEN_FILE, 'r') as file:
+            content = json.load(file)
+            expires_in = int(content['expires_in'])
+        if mtime + expires_in <= time.time():
+            if VERBOSE:
+                print('Token expired. Refreshing...')
+            os.remove(TOKEN_FILE)
 
     try:
         if VERBOSE:
@@ -52,13 +61,8 @@ def main():
         )
     except Exception as err:
         if VERBOSE:
-            print('Authorize API...')
-        os.remove(TOKEN_FILE)
-        api.authorize(
-            username = USERNAME,
-            password = PASSWORD,
-            token_filename = TOKEN_FILE
-        )
+            print(f"api.authorize: {err}")
+        raise SystemExit(f"api.authorize: {err}")
 
     main_domain = Func.mainDomainTail(CERTBOT_DOMAIN)
 
@@ -75,14 +79,12 @@ def main():
         records_id = Func.NIC_findTXTID(records)
         for id in records_id:
             api.delete_record(id, SERVICE_ID, main_domain)
-            if VERBOSE:
-                print(f'Delete {id}')
         api.commit(SERVICE_ID, main_domain)
-        if VERBOSE:
-            print('All changes are commited!')
     except Exception as err:
         raise SystemExit(f"api.delete_record error: {err}")
 
+    if os.path.exists(TOKEN_FILE):
+        os.remove(TOKEN_FILE)
 
 if __name__ == '__main__':
     main()
