@@ -1,9 +1,11 @@
-import os, sys
-from nic_api import DnsApi
-from configparser import ConfigParser
-from func import Func
+import os
+import sys
 import json
 import time
+from configparser import ConfigParser
+
+from nic_api import DnsApi
+from func import Func
 
 try:
     if getattr(sys, 'frozen', False):
@@ -85,6 +87,7 @@ def main():
 
     if os.path.exists(TOKEN_FILE):
         os.remove(TOKEN_FILE)
+
 
 if __name__ == '__main__':
     main()

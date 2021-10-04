@@ -1,7 +1,9 @@
-import os, sys
+import os
+import sys
 from configparser import ConfigParser
 import platform
 import logging as log
+
 from func import Func
 import argparse
 

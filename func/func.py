@@ -1,17 +1,19 @@
-import os, sys
+import os
+import sys
 import dns.resolver
-from nic_api.models import TXTRecord
 import subprocess
 from email.mime.text import MIMEText
 import smtplib
-import cryptography
-from cryptography.fernet import Fernet
 from getpass import getpass
-from slack_webhook import Slack
-import telegram
 from datetime import date
 import shlex
 import time
+
+from nic_api.models import TXTRecord
+import cryptography
+from cryptography.fernet import Fernet
+from slack_webhook import Slack
+import telegram
 
 
 class Func:

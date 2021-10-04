@@ -1,11 +1,13 @@
-import os, sys
-from nic_api import DnsApi
-from nic_api.models import TXTRecord
+import os
+import sys
 from configparser import ConfigParser
 import time
+import json
+
+from nic_api import DnsApi
+from nic_api.models import TXTRecord
 from tld import get_tld
 from func import Func
-import json
 
 try:
     if getattr(sys, 'frozen', False):
@@ -30,6 +32,7 @@ CERTBOT_VALIDATION = os.getenv('CERTBOT_VALIDATION')
 CERTBOT_REMAINING = int(os.getenv('CERTBOT_REMAINING_CHALLENGES'))
 VERBOSE = os.getenv('VERBOSE')
 TOKEN_FILE = script_dir + os.sep + "nic_token.json"
+
 
 def main():
     try:
@@ -103,6 +106,7 @@ def main():
         if VERBOSE:
             print(f'Sleep for {SLEEP} seconds...')
         time.sleep(SLEEP)
+
 
 if __name__ == '__main__':
     main()

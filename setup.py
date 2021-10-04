@@ -1,4 +1,7 @@
-import sys, os, re
+import sys
+import os
+import re
+
 from cx_Freeze import setup, Executable
 import cryptography
 from cryptography.fernet import Fernet
@@ -19,7 +22,7 @@ writeFile.close()
 
 # Dependencies are automatically detected, but it might need fine tuning.
 build_exe_options = {
-    "packages": ["os", "sys", "nic_api", "configparser", "time", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram", "json"],
+    "packages": ["nic_api", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram"],
     "build_exe": "build"
 }
 
