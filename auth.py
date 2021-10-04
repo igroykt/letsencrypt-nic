@@ -1,8 +1,11 @@
-import os, sys
-from nic_api import DnsApi
-from nic_api.models import TXTRecord
+import os
+import sys
 from configparser import ConfigParser
 import time
+import json
+
+from nic_api import DnsApi
+from nic_api.models import TXTRecord
 from tld import get_tld
 from func import Func
 
@@ -24,14 +27,17 @@ SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
 DNS_SERVER = config.get('GENERAL', 'DNS_SERVER').split(',')
 TTL = config.get('GENERAL', 'TTL')
 SLEEP = int(config.get('GENERAL', 'SLEEP'))
-RETRIES = int(config.get('GENERAL', 'RETRIES'))
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
 CERTBOT_VALIDATION = os.getenv('CERTBOT_VALIDATION')
+CERTBOT_REMAINING = int(os.getenv('CERTBOT_REMAINING_CHALLENGES'))
+VERBOSE = os.getenv('VERBOSE')
 TOKEN_FILE = script_dir + os.sep + "nic_token.json"
 
 
 def main():
     try:
+        if VERBOSE:
+            print('Configuring OAuth...')
         oauth_config = {
             'APP_LOGIN': CLIENT_ID,
             'APP_PASSWORD': CLIENT_SECRET
@@ -44,22 +50,28 @@ def main():
     except Exception as err:
         raise SystemExit(f"DnsApi error: {err}")
 
-    if not os.path.exists(TOKEN_FILE):
-        open(TOKEN_FILE, 'w').close()
+    if os.path.exists(TOKEN_FILE):
+        mtime = os.path.getmtime(TOKEN_FILE)
+        with open(TOKEN_FILE, 'r') as file:
+            content = json.load(file)
+            expires_in = int(content['expires_in'])
+        if mtime + expires_in <= time.time():
+            if VERBOSE:
+                print('Token expired. Refreshing...')
+            os.remove(TOKEN_FILE)
 
     try:
+        if VERBOSE:
+            print('Authorize API...')
         api.authorize(
             username = USERNAME,
             password = PASSWORD,
             token_filename = TOKEN_FILE
         )
     except Exception as err:
-        os.remove(TOKEN_FILE)
-        api.authorize(
-            username = USERNAME,
-            password = PASSWORD,
-            token_filename = TOKEN_FILE
-        )
+        if VERBOSE:
+            print(f"api.authorize: {err}")
+        raise SystemExit(f"api.authorize: {err}")
 
     if "*" in CERTBOT_DOMAIN:
         domain = CERTBOT_DOMAIN.split(".")[1:]
@@ -83,17 +95,17 @@ def main():
     except Exception as err:
         raise SystemExit(f"api.add_record error: {err}")
 
-    i = 1
-    while i <= RETRIES:
-        try:
-            Func.checkTXTRecord(DNS_SERVER, query_domain)
+    if VERBOSE:
+        verb = True
+    while True:
+        rdata = Func.checkTXTRecord(DNS_SERVER, query_domain, verbose=verb)
+        if rdata:
             break
-        except Exception:
-            i += 1
-            time.sleep(SLEEP)
-        finally:
-            if i >= RETRIES:
-                raise SystemExit(f"resolver.resolve error: Could not find validation TXT record {CERTBOT_DOMAIN}")
+        time.sleep(10)
+    if CERTBOT_REMAINING == 0:
+        if VERBOSE:
+            print(f'Sleep for {SLEEP} seconds...')
+        time.sleep(SLEEP)
 
 
 if __name__ == '__main__':

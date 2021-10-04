@@ -1,6 +1,10 @@
-import os, sys
-from nic_api import DnsApi
+import os
+import sys
+import json
+import time
 from configparser import ConfigParser
+
+from nic_api import DnsApi
 from func import Func
 
 try:
@@ -19,11 +23,14 @@ CLIENT_ID = os.getenv('NICID')
 CLIENT_SECRET = os.getenv('NICSECRET')
 SERVICE_ID = config.get('GENERAL', 'SERVICE_ID')
 CERTBOT_DOMAIN = os.getenv('CERTBOT_DOMAIN')
+VERBOSE = os.getenv('VERBOSE')
 TOKEN_FILE = script_dir + os.sep + "nic_token.json"
 
 
 def main():
     try:
+        if VERBOSE:
+            print('Configuring OAuth...')
         oauth_config = {
             'APP_LOGIN': CLIENT_ID,
             'APP_PASSWORD': CLIENT_SECRET
@@ -36,37 +43,50 @@ def main():
     except Exception as err:
         raise SystemExit(f"DnsApi error: {err}")
 
-    if not os.path.exists(TOKEN_FILE):
-        open(TOKEN_FILE, 'w').close()
+    if os.path.exists(TOKEN_FILE):
+        mtime = os.path.getmtime(TOKEN_FILE)
+        with open(TOKEN_FILE, 'r') as file:
+            content = json.load(file)
+            expires_in = int(content['expires_in'])
+        if mtime + expires_in <= time.time():
+            if VERBOSE:
+                print('Token expired. Refreshing...')
+            os.remove(TOKEN_FILE)
 
     try:
+        if VERBOSE:
+            print('Authorize API...')
         api.authorize(
             username = USERNAME,
             password = PASSWORD,
             token_filename = TOKEN_FILE
         )
     except Exception as err:
-        os.remove(TOKEN_FILE)
-        api.authorize(
-            username = USERNAME,
-            password = PASSWORD,
-            token_filename = TOKEN_FILE
-        )
+        if VERBOSE:
+            print(f"api.authorize: {err}")
+        raise SystemExit(f"api.authorize: {err}")
 
     main_domain = Func.mainDomainTail(CERTBOT_DOMAIN)
 
     try:
+        if VERBOSE:
+            print('Extract all DNS records...')
         records = api.records(SERVICE_ID, main_domain)
     except Exception as err:
         raise SystemExit(f"api.records error: {err}")
 
     try:
+        if VERBOSE:
+            print('Search for TXT records...')
         records_id = Func.NIC_findTXTID(records)
         for id in records_id:
             api.delete_record(id, SERVICE_ID, main_domain)
         api.commit(SERVICE_ID, main_domain)
     except Exception as err:
         raise SystemExit(f"api.delete_record error: {err}")
+
+    if os.path.exists(TOKEN_FILE):
+        os.remove(TOKEN_FILE)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 #!/usr/local/bin/python3
 
 import os
+
 import pytest
 from func import Func
 

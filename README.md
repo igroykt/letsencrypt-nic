@@ -7,7 +7,7 @@
 Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API.
 
 ## Зависимости
-* Python 3.8
+* Python 3.8+
 * Certbot
 
 ## Unix
@@ -18,9 +18,10 @@ pip3 install -r requirements.txt
 mv config.sample.ini config.ini
 # подправить config.ini
 python setup.py build
-mkdir /root/bin/letsencrypt-nic
-mv build/* /root/bin/letsencrypt-nic
-cp config.ini /root/bin/letsencrypt-nic
+mkdir $HOME/letsencrypt-nic
+mv build/* $HOME/letsencrypt-nic
+cp config.ini $HOME/letsencrypt-nic
+$HOME/letsencrypt-nic/main -a
 ```
 Ключ шифрования меняется при каждой сборке.
 
@@ -35,14 +36,21 @@ SERVICE_ID можно найти в личном кабинете в разде�
 
 Инфо по конфигурации смотрите в wiki.
 
-
 ### Конфиденциальность
 В NIC так повелось, что чтобы получить доступ к OAuth необходимо указывать данные от учетной записи, что ни разу не секьюрно (особенно если к серверу имеют доступ другие лица). Отсюда и компиляция Python скриптов в бинарники, чтобы скрыть учетные данные и защитить от модификации.
 
-### Тест
+### Примеры
+Первый запуск:
+```
+$HOME/main -v -n
+```
 Тестовый запуск:
 ```
-./main -v -t
+$HOME/main -v -t
+```
+Обновление сертификатов:
+```
+$HOME/main -v
 ```
 
 ### Очистка TXT
@@ -51,7 +59,7 @@ SERVICE_ID можно найти в личном кабинете в разде�
 ### Cron
 ```
 #m      #h      #dom    #mon    #dow    #command
-0 	0 	1 	* 	* 	/path/to/letsencrypt-nic/main
+0 	    0 	    1 	    * 	    * 	    $HOME/letsencrypt-nic/main
 ```
 
 ## Windows
@@ -65,4 +73,5 @@ python setup.py build
 mkdir c:\letsencrypt-nic
 move build\* c:\letsencrypt-nic
 copy config.ini c:\letsencrypt-nic
+c:\letsencrypt-nic\main.exe -a
 ```
