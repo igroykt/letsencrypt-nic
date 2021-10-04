@@ -50,7 +50,7 @@ else:
 ENC_KEY = 'XXX'
 ENC_DAT = f'{script_dir}{os.sep}enc.dat'
 
-log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(filename)s %(lineno)d: %(message)s', filename = f'{script_dir}{os.sep}{LOG_FILE}', filemode='w')
+log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(filename)s %(lineno)d: %(message)s', level = log.INFO, filename = f'{script_dir}{os.sep}{LOG_FILE}', filemode='w')
 
 
 def notify(subject, msg, test=False):
