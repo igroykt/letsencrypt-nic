@@ -95,6 +95,7 @@ def main():
     except Exception as err:
         raise SystemExit(f"api.add_record error: {err}")
 
+    verb = ''
     if VERBOSE:
         verb = True
     while True:

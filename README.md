@@ -7,7 +7,7 @@
 Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API.
 
 ## Зависимости
-* Python 3.8+
+* Python 3.6+
 * Certbot
 
 ## Unix

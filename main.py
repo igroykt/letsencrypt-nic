@@ -131,7 +131,9 @@ def main():
                 print('[+] ACME Test: [ DONE ]')
             log.info('[+] ACME Test: [ DONE ]')
             log.info('-= Program completed! =-')
-            sys.exit('-= Program completed! =-')
+            if args.verbose:
+                print('-= Program completed! =-')
+            sys.exit()
         # certbot run
         if args.verbose:
             print('[+] ACME Run: [ START ]')
