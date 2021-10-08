@@ -75,3 +75,6 @@ move build\* c:\letsencrypt-nic
 copy config.ini c:\letsencrypt-nic
 c:\letsencrypt-nic\main.exe -a
 ```
+
+## Проблема истекшего сертификата 30.09.21
+Читайте инфу в wiki.
