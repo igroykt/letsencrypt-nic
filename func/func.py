@@ -211,15 +211,15 @@ class Func:
     # cid - client id
     # cs - client secret
     def encrypt(self, ENC_KEY, ENC_DAT, uname, pwd, cid, cs):
-        #try:
+        try:
             fernet = Fernet(ENC_KEY.encode())
             string = f'{uname},{pwd},{cid},{cs}'
             encrypted = fernet.encrypt(string.encode())
             with open(ENC_DAT, 'wb') as f:
                 f.write(encrypted)
             return True
-        #except Exception as err:
-        #    raise Exception(f'encrypt: {err}')
+        except Exception as err:
+            raise Exception(f'encrypt: {err}')
 
 
     @classmethod
