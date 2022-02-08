@@ -73,7 +73,10 @@ def main():
             print('Extract all DNS records...')
         records = api.records(SERVICE_ID, main_domain)
     except Exception as err:
-        raise SystemExit(f"api.records error: {err}")
+        if "Unknown record type" in err:
+            pass
+        else:
+            raise SystemExit(f"api.records error: {err}")
 
     try:
         if VERBOSE:

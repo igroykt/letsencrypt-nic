@@ -34,6 +34,7 @@ SENDER = config.get('SMTP', 'FROM')
 RECIPIENT = config.get('SMTP', 'TO').split(',')
 SLACKENABLED = config.getboolean('SLACK', 'ENABLED')
 SLACKWEBHOOK = config.get('SLACK', 'WEBHOOK')
+SLACKNOTIFY = config.get('SLACK', 'USE_NOTIFY')
 TELEGRAMENABLED = config.getboolean('TELEGRAM', 'ENABLED')
 TELEGRAMTOKEN = config.get('TELEGRAM', 'TOKEN')
 TELEGRAMCHATID = config.get('TELEGRAM', 'CHAT_ID')
@@ -62,7 +63,10 @@ def notify(subject, msg, test=False):
             sys.exit(err)
     if SLACKENABLED:
         try:
-            Func.slackSend(SLACKWEBHOOK, f'{subject} {msg}')
+            if SLACKNOTIFY:
+                Func.slackSend(SLACKWEBHOOK, f'<!channel> {subject} {msg}')
+            else:
+                Func.slackSend(SLACKWEBHOOK, f'{subject} {msg}')
         except Exception as err:
             log.error(err)
             sys.exit(err)
