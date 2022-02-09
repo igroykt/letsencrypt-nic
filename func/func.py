@@ -14,6 +14,9 @@ import cryptography
 from cryptography.fernet import Fernet
 from slack_webhook import Slack
 import telegram
+from cpuinfo import get_cpu_info
+from hashlib import sha256
+import json
 
 
 class Func:
@@ -290,3 +293,22 @@ class Func:
             return username, password, client_id, client_secret
         except Exception as err:
             raise Exception(f'inputNICCreds: {err}')
+
+    @classmethod
+    def make_cpu_fingerprint(self):
+        try:
+            cpuinfo = get_cpu_info()
+            del cpuinfo['python_version']
+            fingerprint = sha256(json.dumps(cpuinfo).encode('utf-8')).hexdigest()
+            return fingerprint
+        except Exception as err:
+            raise Exception(f'cpu fingerprint: {err}')
+
+    @classmethod
+    def inputPhrase(self):
+        try:
+            pphrase = input('Enter passphrase: ')
+            pphrase = sha256(pphrase.encode('utf-8')).hexdigest()
+            return pphrase
+        except Exception as err:
+            raise Exception(f'inputPhrase: {err}')

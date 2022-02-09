@@ -50,6 +50,8 @@ else:
     CLEAN_HOOK = f'{script_dir}{os.sep}clean'
 ENC_KEY = 'XXX'
 ENC_DAT = f'{script_dir}{os.sep}enc.dat'
+CPU_FINGER = 'XXX'
+PASSPHRASE = 'XXX'
 
 log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(filename)s %(lineno)d: %(message)s', level = log.INFO, filename = f'{script_dir}{os.sep}{LOG_FILE}', filemode='w')
 
@@ -79,6 +81,11 @@ def notify(subject, msg, test=False):
 
 
 def main():
+    if len(CPU_FINGER) > 3:
+        fprint = Func.make_cpu_fingerprint()
+        if CPU_FINGER != fprint:
+            log.error('Application compiled for another system. Terminated...')
+            sys.exit('Application compiled for another system. Terminated...')
     parser = argparse.ArgumentParser(description='LetsEncrypt NIC')
     parser.add_argument('-v', dest='verbose', help='verbose output', action='store_true', required=False)
     parser.add_argument('-t', dest='test', help='test (not actual run)', action='store_true', required=False)
@@ -89,6 +96,11 @@ def main():
     try:
         # save credentials
         if args.add_creds:
+            if len(PASSPHRASE) >= 3:
+                pphrase = Func.inputPhrase()
+                if PASSPHRASE != pphrase:
+                    print('Wrong passphrase. Try again.')
+                    sys.exit(0)
             nicuser, nicpass, nic_id, nic_sec = Func.NIC_inputCreds()
             Func.encrypt(ENC_KEY, ENC_DAT, nicuser, nicpass, nic_id, nic_sec)
             print('Credentials encrypted and saved! Exit...')
