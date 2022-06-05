@@ -36,18 +36,24 @@ TOKEN_FILE = script_dir + os.sep + "nic_token.json"
 
 def main():
     try:
-        api = DnsApi(CLIENT_ID, CLIENT_SECRET)
+        api = DnsApi(
+            app_login=CLIENT_ID,
+            app_password=CLIENT_SECRET
+        )
     except Exception as err:
         raise SystemExit(f"DnsApi error: {err}")
 
     try:
         if VERBOSE:
-            print('Authorize API...')
-        api.get_token(username = USERNAME, password = PASSWORD)
+            print('Obtain token...')
+        api.get_token(
+            username = USERNAME,
+            password = PASSWORD,
+        )
     except Exception as err:
         if VERBOSE:
-            print(f"api.authorize: {err}")
-        raise SystemExit(f"api.authorize: {err}")
+            print(f"api.get_token: {err}")
+        raise SystemExit(f"api.get_token: {err}")
 
     if "*" in CERTBOT_DOMAIN:
         domain = CERTBOT_DOMAIN.split(".")[1:]
