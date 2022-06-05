@@ -8,3 +8,4 @@ argparse
 slack-webhook
 telegram
 cffi
+py-cpuinfo
