@@ -16,10 +16,10 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.9
     - name: Install Python dependencies
       run: |
-        sudo apt install gcc libz-dev
+        sudo apt install gcc libz-dev patchelf
         pip3 install -r requirements.txt
     - name: Test scripts
       run: |
