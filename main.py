@@ -96,6 +96,9 @@ def main():
     try:
         # save credentials
         if args.add_creds:
+            if args.test or args.new_cert or args.verbose:
+                print('Cannot be used with this key.')
+                exit(0)
             if len(PASSPHRASE) >= 3:
                 pphrase = Func.inputPhrase()
                 if PASSPHRASE != pphrase:
@@ -131,6 +134,9 @@ def main():
             raise SystemExit(err)
         # certbot dry run
         if args.test:
+            if args.new_cert or args.add_creds:
+                print('Cannot be used with this key.')
+                exit(0)
             if args.verbose:
                 print('[+] ACME Test: [ START ]')
             log.info('[+] ACME Test: [ START ]')
