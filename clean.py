@@ -49,8 +49,7 @@ def main():
             print('Extract all DNS records...')
         records = api.records(SERVICE_ID, main_domain)
     except Exception as err:
-        else:
-            raise SystemExit(f"api.records error: {err}")
+        raise SystemExit(f"api.records error: {err}")
 
     try:
         if VERBOSE:
