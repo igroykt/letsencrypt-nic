@@ -29,38 +29,14 @@ TOKEN_FILE = script_dir + os.sep + "nic_token.json"
 
 def main():
     try:
-        if VERBOSE:
-            print('Configuring OAuth...')
-        oauth_config = {
-            'APP_LOGIN': CLIENT_ID,
-            'APP_PASSWORD': CLIENT_SECRET
-        }
-    except Exception as err:
-        raise SystemExit(f"oauth_config error: {err}")
-
-    try:
-        api = DnsApi(oauth_config)
+        api = DnsApi(CLIENT_ID, CLIENT_SECRET)
     except Exception as err:
         raise SystemExit(f"DnsApi error: {err}")
-
-    if os.path.exists(TOKEN_FILE):
-        mtime = os.path.getmtime(TOKEN_FILE)
-        with open(TOKEN_FILE, 'r') as file:
-            content = json.load(file)
-            expires_in = int(content['expires_in'])
-        if mtime + expires_in <= time.time():
-            if VERBOSE:
-                print('Token expired. Refreshing...')
-            os.remove(TOKEN_FILE)
 
     try:
         if VERBOSE:
             print('Authorize API...')
-        api.authorize(
-            username = USERNAME,
-            password = PASSWORD,
-            token_filename = TOKEN_FILE
-        )
+        api.get_token(username = USERNAME, password = PASSWORD)
     except Exception as err:
         if VERBOSE:
             print(f"api.authorize: {err}")
@@ -73,8 +49,6 @@ def main():
             print('Extract all DNS records...')
         records = api.records(SERVICE_ID, main_domain)
     except Exception as err:
-        if "Unknown record type" in err:
-            pass
         else:
             raise SystemExit(f"api.records error: {err}")
 
@@ -87,9 +61,6 @@ def main():
         api.commit(SERVICE_ID, main_domain)
     except Exception as err:
         raise SystemExit(f"api.delete_record error: {err}")
-
-    if os.path.exists(TOKEN_FILE):
-        os.remove(TOKEN_FILE)
 
 
 if __name__ == '__main__':
