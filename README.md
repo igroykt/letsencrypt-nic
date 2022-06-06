@@ -7,12 +7,13 @@
 Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API.
 
 ## Зависимости
-* Python 3.6+
+* Python 3.9+
 * Certbot
 
 ## Unix
 ### Сборка и установка 
 ```
+dnf install patchelf
 pip3 install certbot
 pip3 install -r requirements.txt
 mv config.sample.ini config.ini
