@@ -49,10 +49,15 @@ writeFile.write(newFile)
 writeFile.close()
 
 # Dependencies are automatically detected, but it might need fine tuning.
-build_exe_options = {
-    "packages": ["nic_api", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram"],
-    "build_exe": "build"
-}
+if sys.version_info >= (3,8):
+    build_exe_options = {
+        "packages": ["nic_api", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram"]
+    }
+else:
+    build_exe_options = {
+        "packages": ["nic_api", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram"],
+        "build_exe": "build"
+    }
 
 setup(
     name = "letsencrypt-nic",
