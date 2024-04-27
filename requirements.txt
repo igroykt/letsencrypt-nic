@@ -9,3 +9,4 @@ slack-webhook
 telegram
 cffi
 py-cpuinfo
+filelock
