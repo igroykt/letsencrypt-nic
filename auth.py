@@ -81,7 +81,7 @@ def main():
     if VERBOSE:
         verb = True
     while True:
-        rdata = Func.checkTXTRecord(DNS_SERVER, query_domain, verbose=verb)
+        rdata = Func.checkTXTRecord(DNS_SERVER, query_domain, test=False, verbose=verb)
         if rdata:
             break
         time.sleep(10)
