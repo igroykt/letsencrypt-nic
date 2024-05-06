@@ -7,19 +7,20 @@
 Приложение для выписывания wildcard сертификатов используя NIC.RU DNS API.
 
 ## Зависимости
-* Python 3.6+
+* Python 3.9+
 * Certbot
 
 ## Unix
 ### Сборка и установка 
 ```
+dnf install patchelf
 pip3 install certbot
 pip3 install -r requirements.txt
 mv config.sample.ini config.ini
 # подправить config.ini
-python setup.py build
+python3 setup.py build
 mkdir $HOME/letsencrypt-nic
-mv build/* $HOME/letsencrypt-nic
+mv build/exe.[platform]/* $HOME/letsencrypt-nic
 cp config.ini $HOME/letsencrypt-nic
 $HOME/letsencrypt-nic/main -a
 ```

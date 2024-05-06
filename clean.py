@@ -29,42 +29,24 @@ TOKEN_FILE = script_dir + os.sep + "nic_token.json"
 
 def main():
     try:
-        if VERBOSE:
-            print('Configuring OAuth...')
-        oauth_config = {
-            'APP_LOGIN': CLIENT_ID,
-            'APP_PASSWORD': CLIENT_SECRET
-        }
-    except Exception as err:
-        raise SystemExit(f"oauth_config error: {err}")
-
-    try:
-        api = DnsApi(oauth_config)
+        api = DnsApi(
+            app_login=CLIENT_ID,
+            app_password=CLIENT_SECRET
+        )
     except Exception as err:
         raise SystemExit(f"DnsApi error: {err}")
 
-    if os.path.exists(TOKEN_FILE):
-        mtime = os.path.getmtime(TOKEN_FILE)
-        with open(TOKEN_FILE, 'r') as file:
-            content = json.load(file)
-            expires_in = int(content['expires_in'])
-        if mtime + expires_in <= time.time():
-            if VERBOSE:
-                print('Token expired. Refreshing...')
-            os.remove(TOKEN_FILE)
-
     try:
         if VERBOSE:
-            print('Authorize API...')
-        api.authorize(
-            username = USERNAME,
-            password = PASSWORD,
-            token_filename = TOKEN_FILE
+            print('Obtain token...')
+        api.get_token(
+            username=USERNAME,
+            password=PASSWORD,
         )
     except Exception as err:
         if VERBOSE:
-            print(f"api.authorize: {err}")
-        raise SystemExit(f"api.authorize: {err}")
+            print(f"api.get_token: {err}")
+        raise SystemExit(f"api.get_token: {err}")
 
     main_domain = Func.mainDomainTail(CERTBOT_DOMAIN)
 
@@ -84,9 +66,6 @@ def main():
         api.commit(SERVICE_ID, main_domain)
     except Exception as err:
         raise SystemExit(f"api.delete_record error: {err}")
-
-    if os.path.exists(TOKEN_FILE):
-        os.remove(TOKEN_FILE)
 
 
 if __name__ == '__main__':

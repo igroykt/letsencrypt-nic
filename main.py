@@ -34,6 +34,7 @@ SENDER = config.get('SMTP', 'FROM')
 RECIPIENT = config.get('SMTP', 'TO').split(',')
 SLACKENABLED = config.getboolean('SLACK', 'ENABLED')
 SLACKWEBHOOK = config.get('SLACK', 'WEBHOOK')
+SLACKNOTIFY = config.get('SLACK', 'USE_NOTIFY')
 TELEGRAMENABLED = config.getboolean('TELEGRAM', 'ENABLED')
 TELEGRAMTOKEN = config.get('TELEGRAM', 'TOKEN')
 TELEGRAMCHATID = config.get('TELEGRAM', 'CHAT_ID')
@@ -49,6 +50,8 @@ else:
     CLEAN_HOOK = f'{script_dir}{os.sep}clean'
 ENC_KEY = 'XXX'
 ENC_DAT = f'{script_dir}{os.sep}enc.dat'
+CPU_FINGER = 'XXX'
+PASSPHRASE = 'XXX'
 
 log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(filename)s %(lineno)d: %(message)s', level = log.INFO, filename = f'{script_dir}{os.sep}{LOG_FILE}', filemode='w')
 
@@ -62,7 +65,10 @@ def notify(subject, msg, test=False):
             sys.exit(err)
     if SLACKENABLED:
         try:
-            Func.slackSend(SLACKWEBHOOK, f'{subject} {msg}')
+            if SLACKNOTIFY:
+                Func.slackSend(SLACKWEBHOOK, f'<!channel> {subject} {msg}')
+            else:
+                Func.slackSend(SLACKWEBHOOK, f'{subject} {msg}')
         except Exception as err:
             log.error(err)
             sys.exit(err)
@@ -75,6 +81,11 @@ def notify(subject, msg, test=False):
 
 
 def main():
+    if len(CPU_FINGER) > 3:
+        fprint = Func.make_cpu_fingerprint()
+        if CPU_FINGER != fprint:
+            log.error('Application compiled for another system. Terminated...')
+            sys.exit('Application compiled for another system. Terminated...')
     parser = argparse.ArgumentParser(description='LetsEncrypt NIC')
     parser.add_argument('-v', dest='verbose', help='verbose output', action='store_true', required=False)
     parser.add_argument('-t', dest='test', help='test (not actual run)', action='store_true', required=False)
@@ -85,6 +96,14 @@ def main():
     try:
         # save credentials
         if args.add_creds:
+            if args.test or args.new_cert or args.verbose:
+                print('Cannot be used with this key.')
+                exit(0)
+            #if len(PASSPHRASE) >= 3:
+            #    pphrase = Func.inputPhrase()
+            #    if PASSPHRASE != pphrase:
+            #        print('Wrong passphrase. Try again.')
+            #        sys.exit(0)
             nicuser, nicpass, nic_id, nic_sec = Func.NIC_inputCreds()
             Func.encrypt(ENC_KEY, ENC_DAT, nicuser, nicpass, nic_id, nic_sec)
             print('Credentials encrypted and saved! Exit...')
@@ -115,6 +134,9 @@ def main():
             raise SystemExit(err)
         # certbot dry run
         if args.test:
+            if args.new_cert or args.add_creds:
+                print('Cannot be used with this key.')
+                exit(0)
             if args.verbose:
                 print('[+] ACME Test: [ START ]')
             log.info('[+] ACME Test: [ START ]')
