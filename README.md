@@ -1,4 +1,4 @@
-![Build Status](https://github.com/igroykt/letsencrypt-nic/actions/workflows/letsencrypt-nic-build.yml/badge.svg?branch=master)
+![Build Status](https://github.com/igroykt/letsencrypt-nic/actions/workflows/letsencrypt-nic.yml/badge.svg?branch=master)
 ![GitHub](https://img.shields.io/github/license/igroykt/letsencrypt-nic)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/igroykt/letsencrypt-nic)
 
