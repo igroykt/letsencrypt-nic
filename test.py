@@ -21,21 +21,6 @@ def test_call():
     code, out, err = Func.call('ls')
     assert code == 0
 
-'''
-result = Func.sendEmail(
-    'robot@mydomain.ru',
-    ['admin@mydomain.ru', 'security@mydomain.ru'],
-    'test',
-    'test message',
-    'smtp.gmail.com',
-    '587',
-    'xxx',
-    'yyy',
-    test=True,
-)
-assert isinstance(result, bool)
-'''
-
 def test_makeList():
     result = Func.makeList(['mydomain.ru', '*.mydomain.ru', 'mydomain2.ru'])
     assert result == '-d mydomain.ru -d *.mydomain.ru -d mydomain2.ru'

@@ -1,70 +1,71 @@
 import sys
 import os
 import re
-
-from cx_Freeze import setup, Executable
-import cryptography
-from cryptography.fernet import Fernet
-from cpuinfo import get_cpu_info
-from hashlib import sha256
 import json
+from hashlib import sha256
+from cpuinfo import get_cpu_info
+from cryptography.fernet import Fernet
+from cx_Freeze import setup, Executable
 
-# generate crypto key
-key = Fernet.generate_key()
+# Generate crypto key
+key = Fernet.generate_key().decode()
 
-# generate cpu fingerprint
+# Generate CPU fingerprint
 def make_cpu_fingerprint():
     cpuinfo = get_cpu_info()
-    del cpuinfo['python_version']
+    cpuinfo.pop('python_version', None)
     fingerprint = sha256(json.dumps(cpuinfo).encode('utf-8')).hexdigest()
     return fingerprint
 
-if os.getenv('LNIC_USE_FINGERPRINT'):
-    fprint = make_cpu_fingerprint()
+# Retrieve environment variables
+use_fingerprint = os.getenv('LNIC_USE_FINGERPRINT')
+use_passphrase = os.getenv('LNIC_USE_PASSPHRASE')
 
-if os.getenv('LNIC_USE_PASSPHRASE'):
-    if len(os.getenv('LNIC_USE_PASSPHRASE')) < 6:
+# Generate fingerprint and passphrase if needed
+fprint = make_cpu_fingerprint() if use_fingerprint else None
+if use_passphrase:
+    if len(use_passphrase) < 6:
         sys.exit('Passphrase must be 6+ symbols.')
-    tmp_phrase = os.getenv('LNIC_USE_PASSPHRASE')
-    pphrase = sha256(tmp_phrase.encode('utf-8')).hexdigest()
+    pphrase = sha256(use_passphrase.encode('utf-8')).hexdigest()
 
-# update entry point
-newFile = ''
-with open('main.py', 'r') as file:
-    fileContent = file.readlines()
-    for line in fileContent:
+# Update entry point
+def update_entry_point(file_path):
+    with open(file_path, 'r') as file:
+        file_content = file.readlines()
+
+    new_content = ''
+    for line in file_content:
         if 'ENC_KEY =' in line:
-            line = f'ENC_KEY = \'{key.decode()}\'\n'
-        newFile += line
-        if os.getenv('LNIC_USE_FINGERPRINT'):
-            if 'CPU_FINGER =' in line:
-                line = f'CPU_FINGER = \'{fprint}\'\n'
-            newFile += line
-        if os.getenv('LNIC_USE_PASSPHRASE'):
-            if 'PASSPHRASE =' in line:
-                line = f'PASSPHRASE = \'{pphrase}\'\n'
-            newFile += line
-writeFile = open('main.py', 'w')
-writeFile.write(newFile)
-writeFile.close()
+            line = f'ENC_KEY = \'{key}\'\n'
+        new_content += line
+        if use_fingerprint and 'CPU_FINGER =' in line:
+            new_content += f'CPU_FINGER = \'{fprint}\'\n'
+        if use_passphrase and 'PASSPHRASE =' in line:
+            new_content += f'PASSPHRASE = \'{pphrase}\'\n'
 
-# Dependencies are automatically detected, but it might need fine tuning.
-if sys.version_info >= (3,8):
-    build_exe_options = {
-        "packages": ["nic_api", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram"]
-    }
-else:
-    build_exe_options = {
-        "packages": ["nic_api", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram"],
-        "build_exe": "build"
-    }
+    with open(file_path, 'w') as file:
+        file.write(new_content)
 
+update_entry_point('main.py')
+
+# Define build options based on Python version
+build_exe_options = {
+    "packages": ["nic_api", "dns.resolver", "tld", "cryptography", "argparse", "slack_webhook", "telegram"]
+}
+if sys.version_info < (3, 8):
+    build_exe_options["build_exe"] = "build"
+
+# Setup the build
 setup(
-    name = "letsencrypt-nic",
-    version = "1.4",
-    description = "letsencrypt-nic",
-    options = {"build_exe": build_exe_options},
-    executables = [Executable("auth.py"), Executable("clean.py"), Executable("main.py")]
+    name="letsencrypt-nic",
+    version="1.4",
+    description="letsencrypt-nic",
+    options={"build_exe": build_exe_options},
+    executables=[
+        Executable("auth.py"),
+        Executable("clean.py"),
+        Executable("main.py")
+    ]
 )
 
 print('Compile completed!')

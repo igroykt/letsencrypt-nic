@@ -34,57 +34,71 @@ VERBOSE = os.getenv('VERBOSE')
 TOKEN_FILE = script_dir + os.sep + "nic_token.json"
 
 
+def obtain_token(api):
+    """Obtains a token from the DNS API."""
+    if VERBOSE:
+        print('Obtain token...')
+    api.get_token(username=USERNAME, password=PASSWORD)
+
+
+def process_domain(certbot_domain):
+    """Processes the domain to extract the main domain and query domain."""
+    if "*" in certbot_domain:
+        domain = certbot_domain.split(".")[1:]
+        domain = ".".join(domain)
+    else:
+        domain = certbot_domain
+
+    domain_object = get_tld(domain, fix_protocol=True, as_object=True)
+    main_domain = f"{domain_object.domain}.{domain_object}"
+    
+    if domain_object.subdomain:
+        reg_domain = f"{domain_object.subdomain}"
+        query_domain = f"{domain_object.subdomain}.{domain_object.domain}.{domain_object}"
+        record = TXTRecord(name=f"_acme-challenge.{reg_domain}", txt=CERTBOT_VALIDATION, ttl=TTL)
+    else:
+        query_domain = f"{domain_object.domain}.{domain_object}"
+        record = TXTRecord(name="_acme-challenge", txt=CERTBOT_VALIDATION, ttl=TTL)
+    
+    return main_domain, query_domain, record
+
+
+def add_dns_record(api, record, main_domain):
+    """Adds a DNS TXT record and commits the changes."""
+    api.add_record(record, SERVICE_ID, main_domain)
+    api.commit(SERVICE_ID, main_domain)
+
+
+def check_txt_record(query_domain):
+    """Checks for the presence of the DNS TXT record."""
+    while True:
+        rdata = Func.checkTXTRecord(DNS_SERVER, query_domain, test=False, verbose=VERBOSE)
+        if rdata:
+            break
+        time.sleep(10)
+
+
 def main():
     try:
-        api = DnsApi(
-            app_login=CLIENT_ID,
-            app_password=CLIENT_SECRET
-        )
+        api = DnsApi(app_login=CLIENT_ID, app_password=CLIENT_SECRET)
     except Exception as err:
         raise SystemExit(f"DnsApi error: {err}")
 
     try:
-        if VERBOSE:
-            print('Obtain token...')
-        api.get_token(
-            username = USERNAME,
-            password = PASSWORD,
-        )
+        obtain_token(api)
     except Exception as err:
         if VERBOSE:
             print(f"api.get_token: {err}")
         raise SystemExit(f"api.get_token: {err}")
 
-    if "*" in CERTBOT_DOMAIN:
-        domain = CERTBOT_DOMAIN.split(".")[1:]
-        domain = ".".join(domain)
-    else:
-        domain = CERTBOT_DOMAIN
-
-    domain_object = get_tld(domain, fix_protocol=True, as_object=True)
-    main_domain = f"{domain_object.domain}.{domain_object}"
-
     try:
-        if domain_object.subdomain:
-            reg_domain = f"{domain_object.subdomain}"
-            query_domain = f"{domain_object.subdomain}.{domain_object.domain}.{domain_object}"
-            record = TXTRecord(name = f"_acme-challenge.{reg_domain}", txt = CERTBOT_VALIDATION, ttl = TTL)
-        else:
-            query_domain = f"{domain_object.domain}.{domain_object}"
-            record = TXTRecord(name = "_acme-challenge", txt = CERTBOT_VALIDATION, ttl = TTL)
-        api.add_record(record, SERVICE_ID, main_domain)
-        api.commit(SERVICE_ID, main_domain)
+        main_domain, query_domain, record = process_domain(CERTBOT_DOMAIN)
+        add_dns_record(api, record, main_domain)
     except Exception as err:
         raise SystemExit(f"api.add_record error: {err}")
 
-    verb = ''
-    if VERBOSE:
-        verb = True
-    while True:
-        rdata = Func.checkTXTRecord(DNS_SERVER, query_domain, test=False, verbose=verb)
-        if rdata:
-            break
-        time.sleep(10)
+    check_txt_record(query_domain)
+
     if CERTBOT_REMAINING == 0:
         if VERBOSE:
             print(f'Sleep for {SLEEP} seconds...')
@@ -93,3 +107,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

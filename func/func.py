@@ -25,6 +25,7 @@ class Func:
 
 
     @classmethod
+    '''
     def checkTXTRecord(self, DNS_SERVER, query_domain, test=False, verbose=False):
         try:
             count = len(DNS_SERVER)
@@ -44,9 +45,43 @@ class Func:
             return True
         except Exception:
             pass
+    ''''
+    def check_txt_record(self, dns_servers, query_domain, test=False, verbose=False):
+        try:
+            while True:
+                for server in dns_servers:
+                    resolver = dns.resolver.Resolver(configure=False)
+                    resolver.nameservers = [server]
+                    
+                    try:
+                        if test:
+                            if verbose:
+                                print(f"Testing connection to {server}")
+                            resolver.resolve(query_domain, 'A')
+                            return True
+                        
+                        if verbose:
+                            print(f"Checking TXT record on {server}")
+                        answer = resolver.resolve(f'_acme-challenge.{query_domain}', 'TXT')
+                        
+                        if answer:
+                            return True
+                    
+                    except Exception as err:
+                        if verbose:
+                            print(f"Error checking TXT record on {server}: {err}")
+                        continue
+                
+                time.sleep(1)
+        
+        except Exception as err:
+            if verbose:
+                print(f"An error occurred: {err}")
+            return False
 
 
     @classmethod
+    '''
     def mainDomainTail(self, domain):
         try:
             domain = domain.split(".")
@@ -61,6 +96,20 @@ class Func:
             return False
         except Exception as err:
             raise Exception(f'mainDomainTail: {err}')
+    ''''
+    def main_domain_tail(self, domain):
+    try:
+        parts = domain.split(".")
+        # Возьмем последние два уровня домена
+        tail = parts[-2:]
+
+        # Исключим уровни, содержащие "*"
+        tail = [level for level in tail if "*" not in level]
+
+        # Соединим оставшиеся уровни обратно в строку
+        return '.'.join(tail) if tail else False
+    except Exception as err:
+        raise Exception(f'mainDomainTail: {err}')
 
 
     @classmethod

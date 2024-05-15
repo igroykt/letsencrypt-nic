@@ -57,35 +57,86 @@ log.basicConfig(format = '%(levelname)-8s [%(asctime)s] %(filename)s %(lineno)d:
 
 
 def notify(subject, msg, test=False):
+    def send_notification(func, *args):
+        try:
+            func(*args)
+        except Exception as err:
+            log.error(f"Error sending notification via {func.__name__}: {err}")
+    
     if SMTPENABLED:
-        try:
-            Func.sendEmail(SENDER, RECIPIENT, subject, msg, SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS)
-        except Exception as err:
-            log.error(err)
-            sys.exit(err)
+        send_notification(Func.sendEmail, SENDER, RECIPIENT, subject, msg, SMTPSERVER, SMTPPORT, SMTPUSER, SMTPPASS)
+    
     if SLACKENABLED:
-        try:
-            if SLACKNOTIFY:
-                Func.slackSend(SLACKWEBHOOK, f'<!channel> {subject} {msg}')
-            else:
-                Func.slackSend(SLACKWEBHOOK, f'{subject} {msg}')
-        except Exception as err:
-            log.error(err)
-            sys.exit(err)
+        slack_message = f'<!channel> {subject} {msg}' if SLACKNOTIFY else f'{subject} {msg}'
+        send_notification(Func.slackSend, SLACKWEBHOOK, slack_message)
+    
     if TELEGRAMENABLED:
-        try:
-            Func.telegramSend(TELEGRAMTOKEN, TELEGRAMCHATID, f'{subject} {msg}')
-        except Exception as err:
-            log.error(err)
-            sys.exit(err)
+        send_notification(Func.telegramSend, TELEGRAMTOKEN, TELEGRAMCHATID, f'{subject} {msg}')
 
 
-def main():
+def check_cpu_fingerprint():
     if len(CPU_FINGER) > 3:
         fprint = Func.make_cpu_fingerprint()
         if CPU_FINGER != fprint:
             log.error('Application compiled for another system. Terminated...')
             sys.exit('Application compiled for another system. Terminated...')
+
+
+def add_credentials(args):
+    if args.test or args.new_cert or args.verbose:
+        print('Cannot be used with this key.')
+        exit(0)
+    nicuser, nicpass, nic_id, nic_sec = Func.NIC_inputCreds()
+    Func.encrypt(ENC_KEY, ENC_DAT, nicuser, nicpass, nic_id, nic_sec)
+    print('Credentials encrypted and saved! Exit...')
+    sys.exit(0)
+
+
+def run_certbot(args, maindomain, domains):
+    try:
+        code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=args.test, new=args.new_cert, verbose=args.verbose)
+        if code != 0:
+            log.error(err)
+            sys.exit(err)
+    except Exception as err:
+        log.error(err)
+        notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err), test=args.test)
+        raise SystemExit(err)
+
+
+def reload_webserver(args):
+    if args.verbose:
+        print('[+] SERVER Reload: [ START ]')
+    log.info('[+] SERVER Reload: [ START ]')
+    try:
+        Func.reloadServer(TESTCONFIG, RELOADCONFIG)
+    except Exception as err:
+        log.error(err)
+        notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
+        raise SystemExit(err)
+    if args.verbose:
+        print('[+] SERVER Reload: [ DONE ]')
+    log.info('[+] SERVER Reload: [ DONE ]')
+
+
+def run_posthook(args):
+    if args.verbose:
+        print('[+] POST HOOK Run: [ START]')
+    log.info('[+] POST HOOK Run: [ START]')
+    try:
+        code, out, err = Func.call(POSTHOOKSCRIPT)
+    except Exception as err:
+        log.error(err)
+        notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
+        raise SystemExit(err)
+    if args.verbose:
+        print('[+] POST HOOK Run: [ DONE ]')
+    log.info('[+] POST HOOK Run: [ DONE ]')
+
+
+def main():
+    check_cpu_fingerprint()
+    
     parser = argparse.ArgumentParser(description='LetsEncrypt NIC')
     parser.add_argument('-v', dest='verbose', help='verbose output', action='store_true', required=False)
     parser.add_argument('-t', dest='test', help='test (not actual run)', action='store_true', required=False)
@@ -94,37 +145,27 @@ def main():
     args = parser.parse_args()
 
     try:
-        # save credentials
         if args.add_creds:
-            if args.test or args.new_cert or args.verbose:
-                print('Cannot be used with this key.')
-                exit(0)
-            #if len(PASSPHRASE) >= 3:
-            #    pphrase = Func.inputPhrase()
-            #    if PASSPHRASE != pphrase:
-            #        print('Wrong passphrase. Try again.')
-            #        sys.exit(0)
-            nicuser, nicpass, nic_id, nic_sec = Func.NIC_inputCreds()
-            Func.encrypt(ENC_KEY, ENC_DAT, nicuser, nicpass, nic_id, nic_sec)
-            print('Credentials encrypted and saved! Exit...')
-            sys.exit(0)
-        # decrypt
+            add_credentials(args)
+        
         if args.verbose:
             os.environ['VERBOSE'] = "true"
             print('-= LetsEncrypt NIC =-')
         log.info('-= LetsEncrypt NIC =-')
+
         try:
             USER, PASS, CLIENT_ID, CLIENT_SECRET = Func.decrypt(ENC_KEY, ENC_DAT)
         except Exception as err:
             log.error(err)
             notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
             raise SystemExit(err)
-        # export credentials
+        
         Func.exportCredentials(USER, PASS, CLIENT_ID, CLIENT_SECRET)
-        # make domains list
+        
         if args.verbose:
             print('Preparing domain list...')
         log.info('Preparing domain list...')
+        
         try:
             maindomain = Func.makeMainDomain(ZONE)
             domains = Func.makeList(ZONE)
@@ -132,7 +173,7 @@ def main():
             log.error(err)
             notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
             raise SystemExit(err)
-        # certbot dry run
+        
         if args.test:
             if args.new_cert or args.add_creds:
                 print('Cannot be used with this key.')
@@ -140,15 +181,7 @@ def main():
             if args.verbose:
                 print('[+] ACME Test: [ START ]')
             log.info('[+] ACME Test: [ START ]')
-            try:
-                code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, test=True, new=args.new_cert, verbose=args.verbose)
-                if code != 0:
-                    log.error(err)
-                    sys.exit(err)
-            except Exception as err:
-                log.error(err)
-                notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err), test=True)
-                raise SystemExit(err)
+            run_certbot(args, maindomain, domains)
             if args.verbose:
                 print('[+] ACME Test: [ DONE ]')
             log.info('[+] ACME Test: [ DONE ]')
@@ -156,53 +189,23 @@ def main():
             if args.verbose:
                 print('-= Program completed! =-')
             sys.exit()
-        # certbot run
+
         if args.verbose:
             print('[+] ACME Run: [ START ]')
         log.info('[+] ACME Run: [ START ]')
-        try:
-            code, out, err = Func.acmeRun(maindomain, domains, CERTBOT, ADMIN_EMAIL, CONFIG_DIR, AUTH_HOOK, CLEAN_HOOK, new=args.new_cert, verbose=args.verbose)
-            if code != 0:
-                log.error(err)
-                sys.exit(err)
-        except Exception as err:
-            log.error(err)
-            notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
-            raise SystemExit(err)
+        run_certbot(args, maindomain, domains)
         if args.verbose:
             print('[+] ACME Run: [ DONE ]')
         log.info('[+] ACME Run: [ DONE ]')
-        # reload webserver
+
         if WEBSERVERENABLED:
-            if args.verbose:
-                print('[+] SERVER Reload: [ START ]')
-            log.info('[+] SERVER Reload: [ START ]')
-            try:
-                Func.reloadServer(TESTCONFIG, RELOADCONFIG)
-            except Exception as err:
-                log.error(err)
-                notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
-                raise SystemExit(err)
-            if args.verbose:
-                print('[+] SERVER Reload: [ DONE ]')
-            log.info('[+] SERVER Reload: [ DONE ]')
-        # destroy credentials
+            reload_webserver(args)
+        
         Func.destroyCredentials()
-        # posthook run
+
         if POSTHOOKENABLED:
-            if args.verbose:
-                print('[+] POST HOOK Run: [ START]')
-            log.info('[+] POST HOOK Run: [ START]')
-            try:
-                code, out, err = Func.call(POSTHOOKSCRIPT)
-            except Exception as err:
-                log.error(err)
-                notify(f'[ {HOSTNAME} ] LetsEncrypt', str(err))
-                raise SystemExit(err)
-            if args.verbose:
-                print('[+] POST HOOK Run: [ DONE ]')
-            log.info('[+] POST HOOK Run: [ DONE ]')
-        # complete
+            run_posthook(args)
+
         if args.verbose:
             print('-= Program completed! =-')
         log.info('-= Program completed! =-')
