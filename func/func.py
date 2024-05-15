@@ -23,9 +23,8 @@ class Func:
     def __init__(self):
         pass
 
-
-    @classmethod
     '''
+    @classmethod
     def checkTXTRecord(self, DNS_SERVER, query_domain, test=False, verbose=False):
         try:
             count = len(DNS_SERVER)
@@ -45,8 +44,10 @@ class Func:
             return True
         except Exception:
             pass
-    ''''
-    def check_txt_record(self, dns_servers, query_domain, test=False, verbose=False):
+    '''
+
+    @classmethod
+    def checkTXTRecord(self, dns_servers, query_domain, test=False, verbose=False):
         try:
             while True:
                 for server in dns_servers:
@@ -80,8 +81,8 @@ class Func:
             return False
 
 
-    @classmethod
     '''
+    @classmethod
     def mainDomainTail(self, domain):
         try:
             domain = domain.split(".")
@@ -96,20 +97,23 @@ class Func:
             return False
         except Exception as err:
             raise Exception(f'mainDomainTail: {err}')
-    ''''
-    def main_domain_tail(self, domain):
-    try:
-        parts = domain.split(".")
-        # Возьмем последние два уровня домена
-        tail = parts[-2:]
+    '''
 
-        # Исключим уровни, содержащие "*"
-        tail = [level for level in tail if "*" not in level]
 
-        # Соединим оставшиеся уровни обратно в строку
-        return '.'.join(tail) if tail else False
-    except Exception as err:
-        raise Exception(f'mainDomainTail: {err}')
+    @classmethod
+    def mainDomainTail(self, domain):
+        try:
+            parts = domain.split(".")
+            # Возьмем последние два уровня домена
+            tail = parts[-2:]
+
+            # Исключим уровни, содержащие "*"
+            tail = [level for level in tail if "*" not in level]
+
+            # Соединим оставшиеся уровни обратно в строку
+            return '.'.join(tail) if tail else False
+        except Exception as err:
+            raise Exception(f'mainDomainTail: {err}')
 
 
     @classmethod

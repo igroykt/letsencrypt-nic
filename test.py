@@ -4,10 +4,43 @@ import os
 
 import pytest
 from func import Func
+from unittest.mock import patch, MagicMock
+import dns.resolver
 
+'''
 def test_checkTXTRecord():
     result = Func.checkTXTRecord(['8.8.8.8'], 'google.com', test=True)
     assert isinstance(result, bool)
+'''
+
+
+def test_checkTXTRecord():
+    def mock_resolve(domain, record_type):
+        if domain == 'google.com' and record_type == 'A':
+            # After 9 wrong answers, we return a correct one
+            mock_resolve.counter += 1
+            if mock_resolve.counter >= 10:
+                return MagicMock()
+            else:
+                raise dns.resolver.NoAnswer
+        elif domain == '_acme-challenge.google.com' and record_type == 'TXT':
+            # After 9 wrong answers, we return a correct one
+            mock_resolve.counter += 1
+            if mock_resolve.counter >= 10:
+                return MagicMock()
+            else:
+                raise dns.resolver.NoAnswer
+        else:
+            raise dns.resolver.NoAnswer
+    
+    mock_resolve.counter = 0
+
+    with patch('dns.resolver.Resolver.resolve', side_effect=mock_resolve):
+        result = Func.checkTXTRecord(['8.8.8.8'], 'google.com', test=True)
+        assert isinstance(result, bool)
+        assert result is True
+        assert mock_resolve.counter == 10
+
 
 def test_mainDomainTail():
     result = Func.mainDomainTail('top.level.mydomain.ru')
