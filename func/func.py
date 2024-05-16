@@ -15,8 +15,9 @@ from cryptography.fernet import Fernet
 from slack_webhook import Slack
 import telegram
 from cpuinfo import get_cpu_info
-from hashlib import sha256
+import hashlib
 import json
+import platform
 
 
 class Func:
@@ -53,31 +54,25 @@ class Func:
                 for server in dns_servers:
                     resolver = dns.resolver.Resolver(configure=False)
                     resolver.nameservers = [server]
-                    
                     try:
                         if test:
                             if verbose:
                                 print(f"Testing connection to {server}")
                             resolver.resolve(query_domain, 'A')
                             return True
-                        
                         if verbose:
                             print(f"Checking TXT record on {server}")
                         answer = resolver.resolve(f'_acme-challenge.{query_domain}', 'TXT')
-                        
                         if answer:
                             return True
-                    
                     except Exception as err:
                         if verbose:
                             print(f"Error checking TXT record on {server}: {err}")
                         continue
-                
                 time.sleep(1)
-        
         except Exception as err:
             if verbose:
-                print(f"An error occurred: {err}")
+                print(f"CheckTXTRecord: {err}")
             return False
 
 
@@ -104,13 +99,8 @@ class Func:
     def mainDomainTail(self, domain):
         try:
             parts = domain.split(".")
-            # Возьмем последние два уровня домена
             tail = parts[-2:]
-
-            # Исключим уровни, содержащие "*"
             tail = [level for level in tail if "*" not in level]
-
-            # Соединим оставшиеся уровни обратно в строку
             return '.'.join(tail) if tail else False
         except Exception as err:
             raise Exception(f'mainDomainTail: {err}')
@@ -347,15 +337,68 @@ class Func:
         except Exception as err:
             raise Exception(f'inputNICCreds: {err}')
 
+
     @classmethod
-    def make_cpu_fingerprint(self):
+    def makeCPUFingerprint(self, test=False):
         try:
-            cpuinfo = get_cpu_info()
-            del cpuinfo['python_version']
-            fingerprint = sha256(json.dumps(cpuinfo).encode('utf-8')).hexdigest()
-            return fingerprint
+            cpuinfo = get_cpu_info()['brand_raw']
+            if test:
+                cpuinfo = "Intel(R) Core(TM) i7-7700HQ CPU @ 2.80GHz"
+            #cpu_fingerprint = hashlib.sha256(cpuinfo.encode('utf-8')).hexdigest()
+            return cpuinfo
         except Exception as err:
-            raise Exception(f'cpu fingerprint: {err}')
+            raise Exception(f'makeCPUFingerprint: {err}')
+
+
+    @classmethod
+    def getSystemUUID(self, test=False):
+        try:
+            system = platform.system()
+            if system == "Linux":
+                uuid_path = '/sys/class/dmi/id/product_uuid'
+                if os.path.exists(uuid_path):
+                    with open(uuid_path) as f:
+                        uuid = f.read().strip()
+                else:
+                    raise Exception(f'UUID path {uuid_path} does not exist')
+            elif system == "Darwin":  # macOS
+                result = subprocess.run(['ioreg', '-rd1', '-c', 'IOPlatformExpertDevice'], capture_output=True, text=True, check=True)
+                for line in result.stdout.split('\n'):
+                    if 'IOPlatformUUID' in line:
+                        uuid = line.split('=')[1].strip().strip('"')
+                        break
+                else:
+                    raise Exception('Could not find UUID in ioreg output')
+            elif system == "win":
+                result = subprocess.run(['wmic', 'csproduct', 'get', 'UUID'], capture_output=True, text=True, check=True).stdout.split('\n')[1].strip()
+                uuid = result.stdout.strip()
+            elif system == "FreeBSD":
+                result = subprocess.run(['kenv', 'smbios.system.uuid'], capture_output=True, text=True, check=True)
+                uuid = result.stdout.strip()
+            else:
+                raise Exception(f'Unsupported system: {system}')
+            #uuid_fingerprint = hashlib.sha256(uuid.encode('utf-8')).hexdigest()
+            if test:
+                uuid = "7B23EFEE-9CF7-5030-8419-5DAE4CF77265"
+            return uuid
+        except Exception as err:
+            raise Exception(f'getSystemUUID: {err}')
+
+
+    @classmethod
+    def makeServerFingerprint(self, test=False):
+        try:
+            if test:
+                cpu_fingerprint = self.makeCPUFingerprint(test=True)
+                system_uuid = self.getSystemUUID(test=True)
+            else:
+                cpu_fingerprint = self.makeCPUFingerprint()
+                system_uuid = self.getSystemUUID()
+            combined_fingerprint = hashlib.sha256((cpu_fingerprint + system_uuid).encode('utf-8')).hexdigest()
+            return combined_fingerprint
+        except Exception as err:
+            raise Exception(f'makeServerFingerprint: {err}')
+
 
     @classmethod
     def inputPhrase(self):
